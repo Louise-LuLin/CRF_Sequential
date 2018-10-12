@@ -1,0 +1,89 @@
+0	b_site
+1	i_site
+2	o
+3	b_vav
+4	i_vav
+5	b_min air flow sensor
+6	i_min air flow sensor
+7	b_priority point
+8	i_priority point
+9	b_ahu
+10	i_ahu
+11	b_outside air damper
+12	i_outside air damper
+13	b_max air flow sensor
+14	i_max air flow sensor
+15	b_room temp
+16	i_room temp
+17	b_room temp setpoint
+18	i_room temp setpoint
+19	b_air volume sensor
+20	i_air volume sensor
+21	b_valve position
+22	i_valve position
+23	b_reheat coil
+24	i_reheat coil
+25	b_heating/cooling indicator
+26	i_heating/cooling indicator
+27	b_heating coil
+28	i_heating coil
+29	b_pid variable
+30	i_pid variable
+31	b_return fan air volume
+32	i_return fan air volume
+33	b_power meter
+34	i_power meter
+35	b_power factor
+36	i_power factor
+37	b_return air handler
+38	i_return air handler
+39	b_supply fan
+40	i_supply fan
+41	b_supply fan speed
+42	i_supply fan speed
+43	b_alarm variable
+44	i_alarm variable
+45	b_damper position
+46	i_damper position
+47	b_window
+48	i_window
+49	b_valve command
+50	i_valve command
+51	b_chiller
+52	i_chiller
+53	b_pump
+54	i_pump
+55	b_current reading
+56	i_current reading
+57	b_room
+58	i_room
+59	b_differential pressure setpoint
+60	i_differential pressure setpoint
+61	b_chilled water supply temp
+62	i_chilled water supply temp
+63	b_chilled water flow sensor
+64	i_chilled water flow sensor
+65	b_power demand
+66	i_power demand
+67	b_occupany sensor
+68	i_occupany sensor
+69	b_cold water loop
+70	i_cold water loop
+71	b_cooling tower
+72	i_cooling tower
+73	b_vfd
+74	i_vfd
+75	b_input reference point
+76	i_input reference point
+77	b_return air damper
+78	i_return air damper
+79	b_bypass valve
+80	i_bypass valve
+81	b_cooling coil
+82	i_cooling coil
+83	b_flow meter
+84	i_flow meter
+85	b_cac
+86	i_cac
+87	b_air flow setpoint
+88	i_air flow setpoint

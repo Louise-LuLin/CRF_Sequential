@@ -1,0 +1,91 @@
+0	b_site
+1	i_site
+2	b_Floor-id
+3	o
+4	b_Asset-id
+5	i_Asset-id
+6	b_fcu cooling valve percentage cmd
+7	i_fcu cooling valve percentage cmd
+8	b_fcu supply air temperature sensor
+9	i_fcu supply air temperature sensor
+10	b_fcu fan speed sensor
+11	i_fcu fan speed sensor
+12	b_fcu fault
+13	i_fcu fault
+14	b_fcu heating valve percentage cmd
+15	i_fcu heating valve percentage cmd
+16	b_fcu return air temperature sensor
+17	i_fcu return air temperature sensor
+18	b_fcu air temperature setpoint
+19	i_fcu air temperature setpoint
+20	b_fcu air temperature setpoint fcu air temperature cooling setpoint
+21	i_fcu air temperature setpoint fcu air temperature cooling setpoint
+22	b_asset-id
+23	i_asset-id
+24	b_floor-id
+25	i_floor-id
+26	b_light load electric meter
+27	i_light load electric meter
+28	b_room-id
+29	i_room-id
+30	b_socket load electric meter
+31	i_socket load electric meter
+32	b_fcu electric meter
+33	i_fcu electric meter
+34	b_na electric meter
+35	i_na electric meter
+36	b_supply electric meter
+37	i_supply electric meter
+38	b_socket load wireless electric meter
+39	i_socket load wireless electric meter
+40	b_socket load blind electric meter
+41	i_socket load blind electric meter
+42	b_electric meter srvc
+43	i_electric meter srvc
+44	i_Floor-id
+45	b_fcu phase instantations powerunit electric meter
+46	i_fcu phase instantations powerunit electric meter
+47	b_fcu phase maximum powerunit electric meter
+48	i_fcu phase maximum powerunit electric meter
+49	b_fcu frequency electric meter
+50	i_fcu frequency electric meter
+51	b_fcu line voltage electric meter
+52	i_fcu line voltage electric meter
+53	b_fcu phase current electric meter
+54	i_fcu phase current electric meter
+55	b_fcu power factor electric meter
+56	i_fcu power factor electric meter
+57	b_light load phase average powerunit electric meter
+58	i_light load phase average powerunit electric meter
+59	b_light load phase instantations powerunit electric meter
+60	i_light load phase instantations powerunit electric meter
+61	b_light load phase maximum powerunit electric meter
+62	i_light load phase maximum powerunit electric meter
+63	b_light load frequency electric meter
+64	i_light load frequency electric meter
+65	b_light load line voltage electric meter
+66	i_light load line voltage electric meter
+67	b_light load phase current electric meter
+68	i_light load phase current electric meter
+69	b_light load power factor electric meter
+70	i_light load power factor electric meter
+71	b_socket load phase average powerunit electric meter
+72	i_socket load phase average powerunit electric meter
+73	b_socket load phase instantations powerunit electric meter
+74	i_socket load phase instantations powerunit electric meter
+75	b_socket load phase maximum powerunit electric meter
+76	i_socket load phase maximum powerunit electric meter
+77	b_socket load frequency electric meter
+78	i_socket load frequency electric meter
+79	b_socket load line voltage electric meter
+80	i_socket load line voltage electric meter
+81	b_socket load phase current electric meter
+82	i_socket load phase current electric meter
+83	b_socket load power factor electric meter
+84	i_socket load power factor electric meter
+85	b_fcu phase average powerunit electric meter
+86	i_fcu phase average powerunit electric meter
+87	b_electric meter fcu
+88	i_electric meter fcu
+89	b_electric meter light
+90	i_electric meter light

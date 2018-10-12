@@ -1,0 +1,47 @@
+0	b_site
+1	i_site
+2	b_ahu
+3	i_ahu
+4	b_room
+5	i_room
+6	o
+7	b_vav reheat discharge air pressure sensor
+8	i_vav reheat discharge air pressure sensor
+9	b_temp setpoint off
+10	i_temp setpoint off
+11	b_pid loop gain
+12	i_pid loop gain
+13	b_hot water loop
+14	i_hot water loop
+15	b_pump
+16	i_pump
+17	b_fault sensor
+18	i_fault sensor
+19	b_room temp
+20	i_room temp
+21	b_room temp setpoint
+22	i_room temp setpoint
+23	b_lead/lag sensor
+24	i_lead/lag sensor
+25	b_chilled/condensor water loop
+26	i_chilled/condensor water loop
+27	b_event sensor
+28	i_event sensor
+29	b_exhaust fan
+30	i_exhaust fan
+31	b_start stop sensor
+32	i_start stop sensor
+33	b_timer variable
+34	i_timer variable
+35	b_low return air temp alarm
+36	i_low return air temp alarm
+37	b_status sensor
+38	i_status sensor
+39	b_differential pressure status sensor
+40	i_differential pressure status sensor
+41	b_curtailment override variable
+42	i_curtailment override variable
+43	b_air conditioner
+44	i_air conditioner
+45	b_fan speed reset
+46	i_fan speed reset
