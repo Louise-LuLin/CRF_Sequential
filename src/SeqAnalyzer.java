@@ -8,6 +8,7 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Random;
 
 public class SeqAnalyzer {
     private String m_source;
@@ -169,24 +170,58 @@ public class SeqAnalyzer {
 
                     if (type % 2 == 0) { // x_t/t-1...: type=0,2,4,6,8
                         for (int k = 0; k < m_tokenNames.size(); k++) {
-                            if (cur_feature.get(j).intValue() == k) {
-                                Arrays.fill(feature_value_arr, 1.0);
-                            }
-                            else
-                                Arrays.fill(feature_value_arr, 0.0);
-                            ptl = LogTableFactor.makeFromLogValues(new Variable[]{allVars[j]}, feature_value_arr);
-                            factorList.add(ptl);
-                            for(int label_i = 0; label_i < m_labelNames.size(); label_i++)
-                                featureType.add((m_tokenNames.size() * m_labelNames.size()) * (type/2) +
+//                            if (cur_feature.get(j).intValue() == k) {
+//                                if(label_vec!=null) {
+//                                    Arrays.fill(feature_value_arr, 1.0);
+//                                    feature_value_arr[label_vec.get(idx_sample).get(j)] = Math.exp(1.0);
+//                                } else {
+//                                    Random rand = new Random();
+//                                    for(int i = 0; i < feature_value_arr.length; i++)
+//                                        feature_value_arr[i] = rand.nextDouble();
+//                                }
+//                            }
+//                            else
+//                                Arrays.fill(feature_value_arr, 1.0);
+//                            ptl = LogTableFactor.makeFromValues(new Variable[]{allVars[j]}, feature_value_arr);
+//                            factorList.add(ptl);
+//                            featureType.add(m_tokenNames.size() * (type/2) + k);
+                            for(int label_i = 0; label_i < m_labelNames.size(); label_i++) {
+                                if (cur_feature.get(j).intValue() == k) {
+                                    Arrays.fill(feature_value_arr, 1.0);
+                                    feature_value_arr[label_i] = Math.exp(1.0);
+                                }
+                                else
+                                    Arrays.fill(feature_value_arr, 1.0);
+                                ptl = LogTableFactor.makeFromValues(new Variable[]{allVars[j]}, feature_value_arr);
+                                factorList.add(ptl);
+                                featureType.add((m_tokenNames.size() * m_labelNames.size()) * (type / 2) +
                                         m_labelNames.size() * k + label_i);
+                            }
                         }
                     } else { // is digit: type=1,3,5,7,9
-                        Arrays.fill(feature_value_arr, cur_feature.get(j));
-                        ptl = LogTableFactor.makeFromLogValues(new Variable[]{allVars[j]}, feature_value_arr);
-                        factorList.add(ptl);
-                        for(int label_i = 0; label_i < m_labelNames.size(); label_i++)
+//                        if(label_vec != null) {
+//                            Arrays.fill(feature_value_arr, 1.0);
+//                            feature_value_arr[label_vec.get(idx_sample).get(j)] = Math.exp(cur_feature.get(j));
+//                        } else {
+//                            if(cur_feature.get(j) == 0.0)
+//                                Arrays.fill(feature_value_arr, cur_feature.get(j));
+//                            else {
+//                                Random rand = new Random();
+//                                for(int i = 0; i < feature_value_arr.length; i++)
+//                                    feature_value_arr[i] = rand.nextDouble();
+//                            }
+//                        }
+//                        ptl = LogTableFactor.makeFromValues(new Variable[]{allVars[j]}, feature_value_arr);
+//                        factorList.add(ptl);
+//                        featureType.add(m_tokenNames.size() * 5 + type/2);
+                        for(int label_i = 0; label_i < m_labelNames.size(); label_i++) {
+                            Arrays.fill(feature_value_arr, 1.0);
+                            feature_value_arr[label_i] = Math.exp(cur_feature.get(j));
+                            ptl = LogTableFactor.makeFromValues(new Variable[]{allVars[j]}, feature_value_arr);
+                            factorList.add(ptl);
                             featureType.add((m_tokenNames.size() * m_labelNames.size()) * 5 +
-                                    m_labelNames.size() * (type/2) + label_i);
+                                    m_labelNames.size() * (type / 2) + label_i);
+                        }
                     }
                 }
             }
@@ -327,14 +362,14 @@ public class SeqAnalyzer {
         }
         node_features.put(0,x_t);
         node_features.put(1,x_t_is_digit);
-        node_features.put(2,x_t_pre_1);
-        node_features.put(3,x_t_pre_1_is_digit);
-        node_features.put(4,x_t_next_1);
-        node_features.put(5,x_t_next_1_is_digit);
-        node_features.put(6,x_t_pre_2);
-        node_features.put(7,x_t_pre_2_is_digit);
-        node_features.put(8,x_t_next_2);
-        node_features.put(9,x_t_next_2_is_digit);
+//        node_features.put(2,x_t_pre_1);
+//        node_features.put(3,x_t_pre_1_is_digit);
+//        node_features.put(4,x_t_next_1);
+//        node_features.put(5,x_t_next_1_is_digit);
+//        node_features.put(6,x_t_pre_2);
+//        node_features.put(7,x_t_pre_2_is_digit);
+//        node_features.put(8,x_t_next_2);
+//        node_features.put(9,x_t_next_2_is_digit);
 
         return node_features;
     }

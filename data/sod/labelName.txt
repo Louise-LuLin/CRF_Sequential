@@ -41,7 +41,3 @@
 40	i_differential pressure status sensor
 41	b_curtailment override variable
 42	i_curtailment override variable
-43	b_air conditioner
-44	i_air conditioner
-45	b_fan speed reset
-46	i_fan speed reset

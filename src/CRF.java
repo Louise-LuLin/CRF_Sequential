@@ -98,7 +98,7 @@ public class CRF {
         return accs;
     }
 
-    public void crossValidation(int k){
+    public void crossValidation(int k, String prefix){
         m_train_label = new ArrayList<>();
         m_train_string = new ArrayList<>();
         m_test_label = new ArrayList<>();
@@ -139,9 +139,7 @@ public class CRF {
             double acc_cur = calcAcc(m_train_label, trainPrediction)[0];
             System.out.format("cur train acc: %f\n", acc_cur);
 
-
-            for(int j=0; j < 10; j++)
-                System.out.println(m_graphLearner.getParameter(j));  // Print some weights.
+            m_graphLearner.SaveWeights(String.format("%s/weights.txt", prefix));
 
             // Apply the trained model to the test set.
             ArrayList<FactorGraph> testGraphSet = m_graphLearner.buildFactorGraphs_test(testing_data);

@@ -14,14 +14,14 @@ public class Main {
 
         /**** load string and label data ****/
         SeqAnalyzer seqAnalyzer = new SeqAnalyzer(source);
-        seqAnalyzer.loadString(strPath, 100);
-        seqAnalyzer.loadLabel(lblPath, 100);
+        seqAnalyzer.loadString(strPath, 60);
+        seqAnalyzer.loadLabel(lblPath, 60);
         seqAnalyzer.saveTokenNames(tkNamePath);
         seqAnalyzer.saveLabelNames(lbNamePath);
         /**** construct features ****/
 
         CRF crfModel = new CRF(seqAnalyzer);
-        crfModel.crossValidation(crossV);
+        crfModel.crossValidation(crossV, String.format("%s/%s", prefix, source));
     }
 
 }

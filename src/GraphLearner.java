@@ -308,6 +308,7 @@ public class GraphLearner implements Maximizable.ByGradient{
                 factor = tmpString.factorList.get(index);
                 Factor copy = factor.duplicate();
                 feaID = m_featureMap.get(tmpString.featureType.get(index)); // feature ID corresponding to its weight
+
                 copy.exponentiate( m_weights[feaID] );  // potential = feature * weight
                 clique = copy.varSet(); // to deal with factors defined over the same clique
                 if( factorIndex.containsKey(clique) ){
