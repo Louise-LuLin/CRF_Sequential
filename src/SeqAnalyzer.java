@@ -363,9 +363,9 @@ public class SeqAnalyzer {
         node_features.put(0,x_t);
         node_features.put(1,x_t_is_digit);
 //        node_features.put(2,x_t_pre_1);
-//        node_features.put(3,x_t_pre_1_is_digit);
+        node_features.put(3,x_t_pre_1_is_digit);
 //        node_features.put(4,x_t_next_1);
-//        node_features.put(5,x_t_next_1_is_digit);
+        node_features.put(5,x_t_next_1_is_digit);
 //        node_features.put(6,x_t_pre_2);
 //        node_features.put(7,x_t_pre_2_is_digit);
 //        node_features.put(8,x_t_next_2);
