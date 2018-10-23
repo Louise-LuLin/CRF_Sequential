@@ -164,7 +164,7 @@ public class SeqAnalyzer {
             ArrayList<Factor> factorList = new ArrayList<>();   // list of table factors for the current string
             ArrayList<Integer> featureType = new ArrayList<>(); // corresponding feature ID for each list of factors
 
-            //step 2: add features
+            //step 2: add node features
             node_features = constructNodeFeature(token_vec.get(idx_sample));
             ArrayList<Double> cur_feature;
             Factor ptl;
@@ -205,6 +205,25 @@ public class SeqAnalyzer {
                             factorList.add(ptl);
                             featureType.add((m_tokenNames.size() * m_labelNames.size()) * 5 +
                                     m_labelNames.size() * (type / 2) + label_i);
+                        }
+                    }
+                }
+            }
+
+            //step 3: add edge features
+            if(m_mask == null || (!m_mask.containsKey(10)) ||
+                    (m_mask.containsKey(10) && m_mask.get(10).booleanValue() == true)) {
+                int node_feature_size = (m_tokenNames.size() * m_labelNames.size()) * 5
+                        + m_labelNames.size() * 5;
+                double[] trans_feature_arr;
+                for (int j = 0; j < varNodeSize - 1; j++) {
+                    for (int i = 0; i < m_labelNames.size(); i++) {
+                        for (int k = 0; k < m_labelNames.size(); k++) {
+                            trans_feature_arr = label_transition(i, k);
+                            ptl = LogTableFactor.makeFromValues(
+                                    new Variable[]{allVars[j], allVars[j + 1]}, trans_feature_arr);
+                            factorList.add(ptl);
+                            featureType.add(node_feature_size + i * m_labelNames.size() + k);
                         }
                     }
                 }
@@ -364,8 +383,8 @@ public class SeqAnalyzer {
     public double[] label_transition(int label1, int label2){
         int len_arr = m_labelNames.size() * m_labelNames.size();
         double[] arr = new double[len_arr];
-        Arrays.fill(arr, 0.0);
-        arr[label1*m_labelNames.size()+label2] = 1.0;
+        Arrays.fill(arr, 1.0);
+        arr[label1*m_labelNames.size()+label2] = Math.exp(1.0);
         return arr;
     }
 
