@@ -169,6 +169,7 @@ public class SeqAnalyzer {
             ArrayList<Double> cur_feature;
             Factor ptl;
             double[] feature_value_arr = new double[m_labelNames.size()];
+            double[] trans_feature_arr;
             for(int j = 0; j < varNodeSize; j++) {// for each node/variable
 
                 // note features:
@@ -215,7 +216,6 @@ public class SeqAnalyzer {
                     (m_mask.containsKey(10) && m_mask.get(10).booleanValue() == true)) {
                 int node_feature_size = (m_tokenNames.size() * m_labelNames.size()) * 5
                         + m_labelNames.size() * 5;
-                double[] trans_feature_arr;
                 for (int j = 0; j < varNodeSize - 1; j++) {
                     for (int i = 0; i < m_labelNames.size(); i++) {
                         for (int k = 0; k < m_labelNames.size(); k++) {
