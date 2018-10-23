@@ -217,15 +217,23 @@ public class SeqAnalyzer {
                 int node_feature_size = (m_tokenNames.size() * m_labelNames.size()) * 5
                         + m_labelNames.size() * 5;
                 for (int j = 0; j < varNodeSize - 1; j++) {
-                    for (int i = 0; i < m_labelNames.size(); i++) {
-                        for (int k = 0; k < m_labelNames.size(); k++) {
-                            trans_feature_arr = label_transition(i, k);
-                            ptl = LogTableFactor.makeFromValues(
-                                    new Variable[]{allVars[j], allVars[j + 1]}, trans_feature_arr);
-                            factorList.add(ptl);
-                            featureType.add(node_feature_size + i * m_labelNames.size() + k);
-                        }
-                    }
+//                    for (int i = 0; i < m_labelNames.size(); i++) {
+//                        for (int k = 0; k < m_labelNames.size(); k++) {
+//                            trans_feature_arr = label_transition(i, k);
+//                            ptl = LogTableFactor.makeFromValues(
+//                                    new Variable[]{allVars[j], allVars[j + 1]}, trans_feature_arr);
+//                            factorList.add(ptl);
+//                            featureType.add(node_feature_size + i * m_labelNames.size() + k);
+//                        }
+//                    }
+                    trans_feature_arr = new double[m_labelNames.size() * m_labelNames.size()];
+                    Arrays.fill(trans_feature_arr, 1.0);
+
+                    ptl = LogTableFactor.makeFromValues(
+                            new Variable[]{allVars[j], allVars[j + 1]}, trans_feature_arr);
+
+                    factorList.add(ptl);
+                    featureType.add(node_feature_size + 10);
                 }
             }
 
