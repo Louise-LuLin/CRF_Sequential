@@ -1,8 +1,11 @@
+package gLearner;
+
 import edu.umass.cs.mallet.grmm.types.*;
+import gLearner.GraphLearner;
+import gLearner.SeqAnalyzer;
+import gLearner.String4Learning;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Random;
 
 /**
@@ -126,7 +129,7 @@ public class CRF {
             System.out.format("==========\n[Info]Fold No. %d: train size = %d, test size = %d...\n",
                     i, m_train_string.size(), m_test_string.size());
 
-            // Create customized training data and testing data (String4Learning).
+            // Create customized training data and testing data (gLearner.String4Learning).
             ArrayList<String4Learning> training_data = m_seq.string4Learning(m_train_string, m_train_label);
             ArrayList<String4Learning> testing_data = m_seq.string4Learning(m_test_string, null);
 

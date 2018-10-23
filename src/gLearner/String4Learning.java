@@ -1,3 +1,5 @@
+package gLearner;
+
 import edu.umass.cs.mallet.grmm.types.Factor;
 
 import java.util.List;

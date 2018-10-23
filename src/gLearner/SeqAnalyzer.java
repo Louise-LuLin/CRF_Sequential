@@ -1,14 +1,14 @@
-import edu.umass.cs.mallet.base.util.CommandOption;
+package gLearner;
+
 import edu.umass.cs.mallet.grmm.types.Factor;
 import edu.umass.cs.mallet.grmm.types.LogTableFactor;
 import edu.umass.cs.mallet.grmm.types.Variable;
 
 import java.io.*;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Random;
+import java.util.Map;
 
 public class SeqAnalyzer {
     private String m_source;
@@ -22,6 +22,8 @@ public class SeqAnalyzer {
     private ArrayList<ArrayList<Integer>> m_labelList;
     private ArrayList<ArrayList<Integer>> m_tokenList;
 
+    private Map<Integer, Boolean> m_mask;
+
     public SeqAnalyzer(String source){
         this.m_source = source;
         m_labelNames = new ArrayList<>();
@@ -31,7 +33,10 @@ public class SeqAnalyzer {
         m_strList = new ArrayList<>();
         m_labelList = new ArrayList<>();
         m_tokenList = new ArrayList<>();
+        m_mask = null;
     }
+
+    public void setMask(Map<Integer, Boolean> masks) { m_mask = masks; }
 
     public ArrayList<String> getLabelNames(){return this.m_labelNames; }
 
@@ -139,9 +144,10 @@ public class SeqAnalyzer {
         // Each string is stored as an object specifying features as table factors.
         ArrayList<String4Learning> slist = new ArrayList<>();
 
-        // This is a set of node feature vectors. Keys of the hash map are the feature type indices. The vectors are of
-        // the same length equivalent to the string length. This is for a single sequence.
+        // Feature vectors. Key: feature type indices. The vectors are of
+        // the same length equivalent to the string length.
         HashMap<Integer, ArrayList<Double>> node_features;
+
 
         String4Learning str;
 
@@ -158,33 +164,26 @@ public class SeqAnalyzer {
             ArrayList<Factor> factorList = new ArrayList<>();   // list of table factors for the current string
             ArrayList<Integer> featureType = new ArrayList<>(); // corresponding feature ID for each list of factors
 
-            //step 2: add node features
+            //step 2: add features
             node_features = constructNodeFeature(token_vec.get(idx_sample));
             ArrayList<Double> cur_feature;
             Factor ptl;
             double[] feature_value_arr = new double[m_labelNames.size()];
             for(int j = 0; j < varNodeSize; j++) {// for each node/variable
 
+                // note features:
+                // token itself:   0 ~ label_size * (token_size + 2) * (num of type%2==0)
+                // token is digit: label_size * (token_size + 2) * 5 (=A) ~ A + label_size * (num of type%2==1)
                 for (Integer type : node_features.keySet()) {// for each feature type
+                    //skip feature type with mask
+                    if(m_mask != null && m_mask.containsKey(type)
+                            && m_mask.get(type).booleanValue() == false)
+                        continue;
+
                     cur_feature = node_features.get(type);
 
                     if (type % 2 == 0) { // x_t/t-1...: type=0,2,4,6,8
                         for (int k = 0; k < m_tokenNames.size(); k++) {
-//                            if (cur_feature.get(j).intValue() == k) {
-//                                if(label_vec!=null) {
-//                                    Arrays.fill(feature_value_arr, 1.0);
-//                                    feature_value_arr[label_vec.get(idx_sample).get(j)] = Math.exp(1.0);
-//                                } else {
-//                                    Random rand = new Random();
-//                                    for(int i = 0; i < feature_value_arr.length; i++)
-//                                        feature_value_arr[i] = rand.nextDouble();
-//                                }
-//                            }
-//                            else
-//                                Arrays.fill(feature_value_arr, 1.0);
-//                            ptl = LogTableFactor.makeFromValues(new Variable[]{allVars[j]}, feature_value_arr);
-//                            factorList.add(ptl);
-//                            featureType.add(m_tokenNames.size() * (type/2) + k);
                             for(int label_i = 0; label_i < m_labelNames.size(); label_i++) {
                                 if (cur_feature.get(j).intValue() == k) {
                                     Arrays.fill(feature_value_arr, 1.0);
@@ -199,21 +198,6 @@ public class SeqAnalyzer {
                             }
                         }
                     } else { // is digit: type=1,3,5,7,9
-//                        if(label_vec != null) {
-//                            Arrays.fill(feature_value_arr, 1.0);
-//                            feature_value_arr[label_vec.get(idx_sample).get(j)] = Math.exp(cur_feature.get(j));
-//                        } else {
-//                            if(cur_feature.get(j) == 0.0)
-//                                Arrays.fill(feature_value_arr, cur_feature.get(j));
-//                            else {
-//                                Random rand = new Random();
-//                                for(int i = 0; i < feature_value_arr.length; i++)
-//                                    feature_value_arr[i] = rand.nextDouble();
-//                            }
-//                        }
-//                        ptl = LogTableFactor.makeFromValues(new Variable[]{allVars[j]}, feature_value_arr);
-//                        factorList.add(ptl);
-//                        featureType.add(m_tokenNames.size() * 5 + type/2);
                         for(int label_i = 0; label_i < m_labelNames.size(); label_i++) {
                             Arrays.fill(feature_value_arr, 1.0);
                             feature_value_arr[label_i] = Math.exp(cur_feature.get(j));
@@ -360,16 +344,18 @@ public class SeqAnalyzer {
                 x_t_next_2_is_digit.add(0.0);
 
         }
-        node_features.put(0,x_t);
+
         node_features.put(1,x_t_is_digit);
-//        node_features.put(2,x_t_pre_1);
         node_features.put(3,x_t_pre_1_is_digit);
-//        node_features.put(4,x_t_next_1);
         node_features.put(5,x_t_next_1_is_digit);
-//        node_features.put(6,x_t_pre_2);
-//        node_features.put(7,x_t_pre_2_is_digit);
-//        node_features.put(8,x_t_next_2);
-//        node_features.put(9,x_t_next_2_is_digit);
+        node_features.put(7,x_t_pre_2_is_digit);
+        node_features.put(9,x_t_next_2_is_digit);
+
+        node_features.put(0,x_t);
+        node_features.put(2,x_t_pre_1);
+        node_features.put(4,x_t_next_1);
+        node_features.put(6,x_t_pre_2);
+        node_features.put(8,x_t_next_2);
 
         return node_features;
     }

@@ -1,13 +1,11 @@
+package gLearner;
+
 import edu.umass.cs.mallet.base.maximize.LimitedMemoryBFGS;
 import edu.umass.cs.mallet.base.maximize.Maximizable;
 import edu.umass.cs.mallet.base.maximize.Maximizer;
-import edu.umass.cs.mallet.base.types.Matrix;
 import edu.umass.cs.mallet.grmm.inference.Inferencer;
-import edu.umass.cs.mallet.grmm.inference.JunctionTreeInferencer;
 import edu.umass.cs.mallet.grmm.inference.LoopyBP;
-import edu.umass.cs.mallet.grmm.inference.TRP;
 import edu.umass.cs.mallet.grmm.types.*;
-import utils.Utils;
 
 import java.io.*;
 import java.util.*;
@@ -217,7 +215,7 @@ public class GraphLearner implements Maximizable.ByGradient{
             buffer[feaID] = scale * (m_constraints[feaID] - m_exptectations[feaID]) - (m_weights[feaID] * m_lambda);
 //            buffer[feaID] = scale * (m_constraints[feaID] - m_exptectations[feaID]);
         }
-        System.out.format("[Info]Gradient: %f\n", Utils.L2Norm(buffer));
+//        System.out.format("[Info]Gradient: %f\n", Utils.L2Norm(buffer));
     }
 
     void initWeight(){
