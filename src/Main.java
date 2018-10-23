@@ -35,7 +35,7 @@ public class Main {
         seqAnalyzer.setMask(featureMasks);
 
         CRF crfModel = new CRF(seqAnalyzer);
-        crfModel.crossValidation(crossV, String.format("%s/%s", para.m_prefix, para.m_source));
+        crfModel.crossValidation(para.m_crossV, String.format("%s/%s", para.m_prefix, para.m_source));
     }
 
 }
