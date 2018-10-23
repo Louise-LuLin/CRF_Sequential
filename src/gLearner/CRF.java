@@ -131,10 +131,12 @@ public class CRF {
 
             // Create customized training data and testing data (gLearner.String4Learning).
             ArrayList<String4Learning> training_data = m_seq.string4Learning(m_train_string, m_train_label);
-            ArrayList<String4Learning> testing_data = m_seq.string4Learning(m_test_string, null);
-
             // Build up a graph learner and train it using training data.
             GraphLearner m_graphLearner = new GraphLearner(training_data);
+            
+            ArrayList<String4Learning> testing_data = m_seq.string4Learning(m_test_string, null);
+
+
 
             // Train
             long start = System.currentTimeMillis();
