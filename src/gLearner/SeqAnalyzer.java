@@ -217,12 +217,18 @@ public class SeqAnalyzer {
                 int node_feature_size = (m_tokenNames.size() * m_labelNames.size()) * 5
                         + m_labelNames.size() * 5;
 
+                int[] idxs = new int[m_labelNames.size()*m_labelNames.size()];
+                for (int j = 0; j < varNodeSize - 1; j++) {
+                    for (int i = 0; i < m_labelNames.size(); i++) {
+                        idxs[m_labelNames.size() * j + i] = m_labelNames.size() * j + i;
+                    }
+                }
+
                 for (int j = 0; j < varNodeSize - 1; j++) {
                     for (int i = 0; i < m_labelNames.size(); i++) {
                         for (int k = 0; k < m_labelNames.size(); k++) {
                             trans_feature_arr = label_transition(i, k);
                             int[] szs = new int[]{m_labelNames.size(), m_labelNames.size()};
-                            int[] idxs = new int[]{m_labelNames.size() * i + k};
                             SparseMatrixn sparse = new SparseMatrixn(szs, idxs, trans_feature_arr);
                             ptl = LogTableFactor.makeFromMatrix(
                                     new Variable[]{allVars[j], allVars[j + 1]}, sparse);
