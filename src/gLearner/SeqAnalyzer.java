@@ -3,7 +3,7 @@ package gLearner;
 import edu.umass.cs.mallet.grmm.types.Factor;
 import edu.umass.cs.mallet.grmm.types.LogTableFactor;
 import edu.umass.cs.mallet.grmm.types.Variable;
-
+import edu.umass.cs.mallet.base.types.SparseMatrixn;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -218,28 +218,31 @@ public class SeqAnalyzer {
                         + m_labelNames.size() * 5;
 
                 for (int j = 0; j < varNodeSize - 1; j++) {
-//                    for (int i = 0; i < m_labelNames.size(); i++) {
-//                        for (int k = 0; k < m_labelNames.size(); k++) {
-//                            trans_feature_arr = label_transition(i, k);
-//                            ptl = LogTableFactor.makeFromValues(
-//                                    new Variable[]{allVars[j], allVars[j + 1]}, trans_feature_arr);
-//                            factorList.add(ptl);
-//                            featureType.add(node_feature_size + i * m_labelNames.size() + k);
-//                        }
-//                    }
-                    trans_feature_arr = new double[m_labelNames.size() * m_labelNames.size()];
-                    Arrays.fill(trans_feature_arr, Math.exp(1.0));
-                    if(label_vec != null){
-                        int curIdx_1 = label_vec.get(idx_sample).get(j);
-                        int curIdx_2 = label_vec.get(idx_sample).get(j+1);
-                        trans_feature_arr = label_transition(curIdx_1, curIdx_2);
+                    for (int i = 0; i < m_labelNames.size(); i++) {
+                        for (int k = 0; k < m_labelNames.size(); k++) {
+                            trans_feature_arr = label_transition(i, k);
+                            int[] szs = new int[]{m_labelNames.size(), m_labelNames.size()};
+                            int[] idxs = new int[]{m_labelNames.size() * i + k};
+                            SparseMatrixn sparse = new SparseMatrixn(trans_feature_arr);
+                            ptl = LogTableFactor.makeFromMatrix(
+                                    new Variable[]{allVars[j], allVars[j + 1]}, sparse);
+                            factorList.add(ptl);
+                            featureType.add(node_feature_size + i * m_labelNames.size() + k);
+                        }
                     }
-
-                    ptl = LogTableFactor.makeFromValues(
-                            new Variable[]{allVars[j], allVars[j + 1]}, trans_feature_arr);
-
-                    factorList.add(ptl);
-                    featureType.add(node_feature_size + 10);
+//                    trans_feature_arr = new double[m_labelNames.size() * m_labelNames.size()];
+//                    Arrays.fill(trans_feature_arr, Math.exp(1.0));
+//                    if(label_vec != null){
+//                        int curIdx_1 = label_vec.get(idx_sample).get(j);
+//                        int curIdx_2 = label_vec.get(idx_sample).get(j+1);
+//                        trans_feature_arr = label_transition(curIdx_1, curIdx_2);
+//                    }
+//
+//                    ptl = LogTableFactor.makeFromValues(
+//                            new Variable[]{allVars[j], allVars[j + 1]}, trans_feature_arr);
+//
+//                    factorList.add(ptl);
+//                    featureType.add(node_feature_size + 10);
                 }
             }
 
