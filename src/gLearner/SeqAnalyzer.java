@@ -223,7 +223,7 @@ public class SeqAnalyzer {
                             trans_feature_arr = label_transition(i, k);
                             int[] szs = new int[]{m_labelNames.size(), m_labelNames.size()};
                             int[] idxs = new int[]{m_labelNames.size() * i + k};
-                            SparseMatrixn sparse = new SparseMatrixn(trans_feature_arr);
+                            SparseMatrixn sparse = new SparseMatrixn(szs, idxs, trans_feature_arr);
                             ptl = LogTableFactor.makeFromMatrix(
                                     new Variable[]{allVars[j], allVars[j + 1]}, sparse);
                             factorList.add(ptl);
