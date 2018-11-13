@@ -216,6 +216,7 @@ public class SeqAnalyzer {
                     (m_mask.containsKey(10) && m_mask.get(10).booleanValue() == true)) {
                 int node_feature_size = (m_tokenNames.size() * m_labelNames.size()) * 5
                         + m_labelNames.size() * 5;
+
                 for (int j = 0; j < varNodeSize - 1; j++) {
 //                    for (int i = 0; i < m_labelNames.size(); i++) {
 //                        for (int k = 0; k < m_labelNames.size(); k++) {
@@ -228,6 +229,11 @@ public class SeqAnalyzer {
 //                    }
                     trans_feature_arr = new double[m_labelNames.size() * m_labelNames.size()];
                     Arrays.fill(trans_feature_arr, 1.0);
+                    if(label_vec != null){
+                        int curIdx_1 = label_vec.get(idx_sample).get(j);
+                        int curIdx_2 = label_vec.get(idx_sample).get(j+1);
+                        trans_feature_arr = label_transition(curIdx_1, curIdx_2);
+                    }
 
                     ptl = LogTableFactor.makeFromValues(
                             new Variable[]{allVars[j], allVars[j + 1]}, trans_feature_arr);
@@ -236,23 +242,6 @@ public class SeqAnalyzer {
                     featureType.add(node_feature_size + 10);
                 }
             }
-
-            // Add all first-order transition features f(y_(i-1),y_i).
-//            double[] trans_feature_arr;
-//            for(int i=0; i<num_label; i++){
-//                for(int j=0; j<num_label; j++){
-//                    trans_feature_arr = m_seq.label_transition(i,j);
-//                    //System.out.println(trans_feature_arr.toString());
-//                    for(int k=0; k<len_string.get(idx_sample)-1; k++){
-//                        Factor ptl = LogTableFactor.makeFromLogValues(
-//                                new Variable[] {allVars[k], allVars[k+1]}, trans_feature_arr);
-////                        Factor ptl = new TableFactor(
-////                                new Variable[] {allVars[k], allVars[k+1]}, trans_feature_arr);
-//                        factorList.add(ptl);
-//                        featureType.add(num_node_feature_type+i*num_label+j);
-//                    }
-//                }
-//            }
 
             // Add the list of table factors into the sample object.
             if(label_vec != null) {
