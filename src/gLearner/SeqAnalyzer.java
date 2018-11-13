@@ -228,7 +228,7 @@ public class SeqAnalyzer {
 //                        }
 //                    }
                     trans_feature_arr = new double[m_labelNames.size() * m_labelNames.size()];
-                    Arrays.fill(trans_feature_arr, 1.0);
+                    Arrays.fill(trans_feature_arr, Math.exp(1.0));
                     if(label_vec != null){
                         int curIdx_1 = label_vec.get(idx_sample).get(j);
                         int curIdx_2 = label_vec.get(idx_sample).get(j+1);
