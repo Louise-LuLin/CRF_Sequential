@@ -1,8 +1,11 @@
+package gLearner;
+
 import edu.umass.cs.mallet.grmm.types.*;
+import gLearner.GraphLearner;
+import gLearner.SeqAnalyzer;
+import gLearner.String4Learning;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Random;
 
 /**
@@ -98,7 +101,7 @@ public class CRF {
         return accs;
     }
 
-    public void crossValidation(int k){
+    public void crossValidation(int k, String prefix){
         m_train_label = new ArrayList<>();
         m_train_string = new ArrayList<>();
         m_test_label = new ArrayList<>();
@@ -126,12 +129,14 @@ public class CRF {
             System.out.format("==========\n[Info]Fold No. %d: train size = %d, test size = %d...\n",
                     i, m_train_string.size(), m_test_string.size());
 
-            // Create customized training data and testing data (String4Learning).
+            // Create customized training data and testing data (gLearner.String4Learning).
             ArrayList<String4Learning> training_data = m_seq.string4Learning(m_train_string, m_train_label);
-            ArrayList<String4Learning> testing_data = m_seq.string4Learning(m_test_string, null);
-
             // Build up a graph learner and train it using training data.
             GraphLearner m_graphLearner = new GraphLearner(training_data);
+
+            ArrayList<String4Learning> testing_data = m_seq.string4Learning(m_test_string, null);
+
+
 
             // Train
             long start = System.currentTimeMillis();
@@ -139,9 +144,7 @@ public class CRF {
             double acc_cur = calcAcc(m_train_label, trainPrediction)[0];
             System.out.format("cur train acc: %f\n", acc_cur);
 
-
-            for(int j=0; j < 10; j++)
-                System.out.println(m_graphLearner.getParameter(j));  // Print some weights.
+            m_graphLearner.SaveWeights(String.format("%s/weights.txt", prefix));
 
             // Apply the trained model to the test set.
             ArrayList<FactorGraph> testGraphSet = m_graphLearner.buildFactorGraphs_test(testing_data);

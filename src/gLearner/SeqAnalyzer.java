@@ -1,3 +1,5 @@
+package gLearner;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -7,7 +9,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
+import edu.umass.cs.mallet.base.types.SparseMatrixn;
 import edu.umass.cs.mallet.grmm.types.Factor;
 import edu.umass.cs.mallet.grmm.types.LogTableFactor;
 import edu.umass.cs.mallet.grmm.types.Variable;
@@ -26,6 +30,8 @@ public class SeqAnalyzer {
     private ArrayList<ArrayList<Integer>> m_labelList;
     private ArrayList<ArrayList<Integer>> m_tokenList;
 
+    private Map<Integer, Boolean> m_mask;
+
     public SeqAnalyzer(String source){
         this.m_source = source;
         
@@ -38,9 +44,13 @@ public class SeqAnalyzer {
         m_strList = new ArrayList<>();
         m_labelList = new ArrayList<>();
         m_tokenList = new ArrayList<>();
+        m_mask = null;
     }
 
-    public ArrayList<String> getLabelNames(){ return this.m_labelNames; }
+
+    public void setMask(Map<Integer, Boolean> masks) { m_mask = masks; }
+
+    public ArrayList<String> getLabelNames(){return this.m_labelNames; }
 
     public HashMap<String, Integer> getLabelNameIndex(){ return this.m_labelNameIndex; }
 
@@ -147,9 +157,10 @@ public class SeqAnalyzer {
         // Each string is stored as an object specifying features as table factors.
         ArrayList<String4Learning> slist = new ArrayList<String4Learning>();
 
-        // This is a set of node feature vectors. Keys of the hash map are the feature type indices. The vectors are of
-        // the same length equivalent to the string length. This is for a single sequence.
+        // Feature vectors. Key: feature type indices. The vectors are of
+        // the same length equivalent to the string length.
         HashMap<Integer, ArrayList<Double>> node_features;
+
 
         String4Learning str;
 
@@ -172,52 +183,88 @@ public class SeqAnalyzer {
             ArrayList<Double> cur_feature;
             Factor ptl;
             double[] feature_value_arr = new double[m_labelNames.size()];
+            double[] trans_feature_arr;
             for(int j = 0; j < varNodeSize; j++) {// for each node/variable
 
+                // note features:
+                // token itself:   0 ~ label_size * (token_size + 2) * (num of type%2==0)
+                // token is digit: label_size * (token_size + 2) * 5 (=A) ~ A + label_size * (num of type%2==1)
                 for (Integer type : node_features.keySet()) {// for each feature type
+                    //skip feature type with mask
+                    if(m_mask != null && m_mask.containsKey(type)
+                            && m_mask.get(type).booleanValue() == false)
+                        continue;
+
                     cur_feature = node_features.get(type);
 
                     if (type % 2 == 0) { // x_t/t-1...: type=0,2,4,6,8
                         for (int k = 0; k < m_tokenNames.size(); k++) {
-                            if (cur_feature.get(j).intValue() == k) {
-                                Arrays.fill(feature_value_arr, 1.0);
-                            }
-                            else
-                                Arrays.fill(feature_value_arr, 0.0);
-                            
-                            ptl = LogTableFactor.makeFromLogValues(new Variable[]{allVars[j]}, feature_value_arr);
-                            factorList.add(ptl);
-                            for(int label_i = 0; label_i < m_labelNames.size(); label_i++)
-                                featureType.add((m_tokenNames.size() * m_labelNames.size()) * (type/2) +
+                            for(int label_i = 0; label_i < m_labelNames.size(); label_i++) {
+                                if (cur_feature.get(j).intValue() == k) {
+                                    Arrays.fill(feature_value_arr, 1.0);
+                                    feature_value_arr[label_i] = Math.exp(1.0);
+                                }
+                                else
+                                    Arrays.fill(feature_value_arr, 1.0);
+                                ptl = LogTableFactor.makeFromValues(new Variable[]{allVars[j]}, feature_value_arr);
+                                factorList.add(ptl);
+                                featureType.add((m_tokenNames.size() * m_labelNames.size()) * (type / 2) +
                                         m_labelNames.size() * k + label_i);
+                            }
                         }
                     } else { // is digit: type=1,3,5,7,9
-                        Arrays.fill(feature_value_arr, cur_feature.get(j));
-                        ptl = LogTableFactor.makeFromLogValues(new Variable[]{allVars[j]}, feature_value_arr);
-                        factorList.add(ptl);
-                        for(int label_i = 0; label_i < m_labelNames.size(); label_i++)
+                        for(int label_i = 0; label_i < m_labelNames.size(); label_i++) {
+                            Arrays.fill(feature_value_arr, 1.0);
+                            feature_value_arr[label_i] = Math.exp(cur_feature.get(j));
+                            ptl = LogTableFactor.makeFromValues(new Variable[]{allVars[j]}, feature_value_arr);
+                            factorList.add(ptl);
                             featureType.add((m_tokenNames.size() * m_labelNames.size()) * 5 +
-                                    m_labelNames.size() * (type/2) + label_i);
+                                    m_labelNames.size() * (type / 2) + label_i);
+                        }
                     }
                 }
             }
 
-            // Add all first-order transition features f(y_(i-1),y_i).
-//            double[] trans_feature_arr;
-//            for(int i=0; i<num_label; i++){
-//                for(int j=0; j<num_label; j++){
-//                    trans_feature_arr = m_seq.label_transition(i,j);
-//                    //System.out.println(trans_feature_arr.toString());
-//                    for(int k=0; k<len_string.get(idx_sample)-1; k++){
-//                        Factor ptl = LogTableFactor.makeFromLogValues(
-//                                new Variable[] {allVars[k], allVars[k+1]}, trans_feature_arr);
-////                        Factor ptl = new TableFactor(
-////                                new Variable[] {allVars[k], allVars[k+1]}, trans_feature_arr);
-//                        factorList.add(ptl);
-//                        featureType.add(num_node_feature_type+i*num_label+j);
+            //step 3: add edge features
+            if(m_mask == null || (!m_mask.containsKey(10)) ||
+                    (m_mask.containsKey(10) && m_mask.get(10).booleanValue() == true)) {
+                int node_feature_size = (m_tokenNames.size() * m_labelNames.size()) * 5
+                        + m_labelNames.size() * 5;
+
+                int[] idxs = new int[m_labelNames.size()*m_labelNames.size()];
+                for (int j = 0; j < varNodeSize - 1; j++) {
+                    for (int i = 0; i < m_labelNames.size(); i++) {
+                        idxs[m_labelNames.size() * j + i] = m_labelNames.size() * j + i;
+                    }
+                }
+
+                for (int j = 0; j < varNodeSize - 1; j++) {
+                    for (int i = 0; i < m_labelNames.size(); i++) {
+                        for (int k = 0; k < m_labelNames.size(); k++) {
+                            trans_feature_arr = label_transition(i, k);
+                            int[] szs = new int[]{m_labelNames.size(), m_labelNames.size()};
+                            SparseMatrixn sparse = new SparseMatrixn(szs, idxs, trans_feature_arr);
+                            ptl = LogTableFactor.makeFromMatrix(
+                                    new Variable[]{allVars[j], allVars[j + 1]}, sparse);
+                            factorList.add(ptl);
+                            featureType.add(node_feature_size + i * m_labelNames.size() + k);
+                        }
+                    }
+//                    trans_feature_arr = new double[m_labelNames.size() * m_labelNames.size()];
+//                    Arrays.fill(trans_feature_arr, Math.exp(1.0));
+//                    if(label_vec != null){
+//                        int curIdx_1 = label_vec.get(idx_sample).get(j);
+//                        int curIdx_2 = label_vec.get(idx_sample).get(j+1);
+//                        trans_feature_arr = label_transition(curIdx_1, curIdx_2);
 //                    }
-//                }
-//            }
+//
+//                    ptl = LogTableFactor.makeFromValues(
+//                            new Variable[]{allVars[j], allVars[j + 1]}, trans_feature_arr);
+//
+//                    factorList.add(ptl);
+//                    featureType.add(node_feature_size + 10);
+                }
+            }
 
             // Add the list of table factors into the sample object.
             if(label_vec != null) {
@@ -336,16 +383,18 @@ public class SeqAnalyzer {
                 x_t_next_2_is_digit.add(0.0);
 
         }
-        node_features.put(0,x_t);
+
         node_features.put(1,x_t_is_digit);
-        node_features.put(2,x_t_pre_1);
         node_features.put(3,x_t_pre_1_is_digit);
-        node_features.put(4,x_t_next_1);
         node_features.put(5,x_t_next_1_is_digit);
-        node_features.put(6,x_t_pre_2);
         node_features.put(7,x_t_pre_2_is_digit);
-        node_features.put(8,x_t_next_2);
         node_features.put(9,x_t_next_2_is_digit);
+
+        node_features.put(0,x_t);
+        node_features.put(2,x_t_pre_1);
+        node_features.put(4,x_t_next_1);
+        node_features.put(6,x_t_pre_2);
+        node_features.put(8,x_t_next_2);
 
         return node_features;
     }
@@ -354,8 +403,8 @@ public class SeqAnalyzer {
     public double[] label_transition(int label1, int label2){
         int len_arr = m_labelNames.size() * m_labelNames.size();
         double[] arr = new double[len_arr];
-        Arrays.fill(arr, 0.0);
-        arr[label1*m_labelNames.size()+label2] = 1.0;
+        Arrays.fill(arr, 1.0);
+        arr[label1*m_labelNames.size()+label2] = Math.exp(1.0);
         return arr;
     }
 
