@@ -151,55 +151,32 @@ public class SeqAnalyzer {
         }
     }
 
-    private ArrayList<ArrayList<Integer>> string2vec(ArrayList<String> strings){
-        ArrayList<ArrayList<Integer>> token_vec = new ArrayList<>();
-        ArrayList<Integer> token_idxs;
-        
-        for(String str : strings){
-            token_idxs = new ArrayList<>();
-            int idx;
-            for(int i = 0 ; i < str.length(); i++){
-                idx = getTokenIndex(Character.toString(str.charAt(i))); //dynamically expand tokenNames: each char to string
-                token_idxs.add(idx);
-            }
-            token_vec.add(token_idxs);
-        }
-
-        return token_vec;
-    }
-
-    public ArrayList<String4Learning> string4Learning(ArrayList<String> strings,
-                                                      ArrayList<int[]> label_vec){
-
-        System.out.format("[Info]Label size: %d, token size: %d\n", m_labelNames.size(), m_tokenNames.size());
-        ArrayList<ArrayList<Integer>> token_vec = string2vec(strings);
+    //To create the training sequence
+    public ArrayList<String4Learning> getStr4Learning(){
+        System.out.format("[Info]Label size: %d, token size: %d\n", m_labelNames.size(), m_tokenNames.size());        
 
         // Each string is stored as an object specifying features as table factors.
         ArrayList<String4Learning> slist = new ArrayList<String4Learning>();
-
+        String4Learning str;
+        
         // Feature vectors. Key: feature type indices. The vectors are of
         // the same length equivalent to the string length.
         HashMap<Integer, ArrayList<Double>> node_features;
 
-
-        String4Learning str;
-
         // For each training sample, construct a factor graph, and a list of table factors to specify edge
         // and node features.
-        for(int idx_sample = 0; idx_sample < token_vec.size(); idx_sample++){
-//            System.out.format("[Info]Constructing %d-th sample\n", idx_sample);
-
+        for(Sequence seq:m_seqList){
             //step 1: construct the graph
-            int varNodeSize = token_vec.get(idx_sample).size();
+            int varNodeSize = seq.getLength();
             Variable[] allVars = new Variable[varNodeSize];
             for(int i = 0; i < allVars.length; i++)
-                allVars[i] = new Variable(m_labelNames.size()); //each label variable has this many outcomes
+                allVars[i] = new Variable(m_labelNames.size()); //each label variable has this many outcomes. But we can reduce this ahead of time based on the nature of our problem?
             
             ArrayList<Factor> factorList = new ArrayList<Factor>();   // list of table factors for the current string
             ArrayList<Integer> featureType = new ArrayList<Integer>(); // corresponding feature ID for each list of factors
 
             //step 2: add node features
-            node_features = constructNodeFeature(token_vec.get(idx_sample));
+            node_features = constructNodeFeature(seq.getTokens());
             ArrayList<Double> cur_feature;
             Factor ptl;
             double[] feature_value_arr = new double[m_labelNames.size()];
@@ -246,12 +223,11 @@ public class SeqAnalyzer {
             }
 
             //step 3: add edge features
-            if(m_mask == null || (!m_mask.containsKey(10)) ||
-                    (m_mask.containsKey(10) && m_mask.get(10).booleanValue() == true)) {
-                int node_feature_size = (m_tokenNames.size() * m_labelNames.size()) * 5
+            if(m_mask == null || !m_mask.containsKey(10) || m_mask.get(10).booleanValue() == true) {
+                int node_feature_size = (m_tokenNames.size() * m_labelNames.size()) * 5 // This is incorrect! As we might mask out some node features!!!!
                         + m_labelNames.size() * 5;
 
-                int[] idxs = new int[m_labelNames.size()*m_labelNames.size()];
+                int[] idxs = new int[m_labelNames.size()*m_labelNames.size()];//why are we using varNodeSize below to iterate over this square matrix?
                 for (int j = 0; j < varNodeSize - 1; j++) {
                     for (int i = 0; i < m_labelNames.size(); i++) {
                         idxs[m_labelNames.size() * j + i] = m_labelNames.size() * j + i;
@@ -287,8 +263,10 @@ public class SeqAnalyzer {
             }
 
             // Add the list of table factors into the sample object.
-            if(label_vec != null) {
-                str = new String4Learning(factorList, featureType, label_vec.get(idx_sample));
+            int[] label_vec = seq.getLabels();
+            
+            if(label_vec != null) {//why would we encounter this?
+                str = new String4Learning(factorList, featureType, label_vec);
             }else{
                 str = new String4Learning(factorList, featureType);
             }
@@ -299,7 +277,7 @@ public class SeqAnalyzer {
     }
 
     // build the node features
-    public HashMap<Integer,ArrayList<Double>> constructNodeFeature(ArrayList<Integer> sample){
+    public HashMap<Integer, ArrayList<Double>> constructNodeFeature(int[] tokens){
         //0: x_t = o
         //1: x_t is digit
         //2: x_t-1 = o
@@ -339,9 +317,9 @@ public class SeqAnalyzer {
 
         int curIdx;
         String curToken;
-        for(int i = 0;i < sample.size(); i++){
+        for(int i = 0;i < tokens.length; i++){
             //x_t
-            curIdx = sample.get(i);
+            curIdx = tokens[i];
             curToken = m_tokenNames.get(curIdx);
             x_t.add((double) curIdx);
             //x_t is digit
@@ -354,7 +332,7 @@ public class SeqAnalyzer {
             if(i == 0)
                 curIdx = getTokenIndex("START");
             else
-                curIdx = sample.get(i-1);
+                curIdx = tokens[i-1];
             curToken = m_tokenNames.get(curIdx);
             x_t_pre_1.add((double) curIdx);
             //x_t-1 is digit
@@ -367,7 +345,7 @@ public class SeqAnalyzer {
             if(i < 2)
                 curIdx = getTokenIndex("START");
             else
-                curIdx = sample.get(i-2);
+                curIdx = tokens[i-2];
             curToken = m_tokenNames.get(curIdx);
             x_t_pre_2.add((double) curIdx);
             //x_t-2 is digit
@@ -377,10 +355,10 @@ public class SeqAnalyzer {
                 x_t_pre_2_is_digit.add(0.0);
 
             //x_t+1
-            if(i == sample.size()-1)
+            if(i == tokens.length-1)
                 curIdx = getTokenIndex("END");
             else
-                curIdx = sample.get(i+1);
+                curIdx = tokens[i+1];
             curToken = m_tokenNames.get(curIdx);
             x_t_next_1.add((double) curIdx);
             //x_t+1 is digit
@@ -390,10 +368,10 @@ public class SeqAnalyzer {
                 x_t_next_1_is_digit.add(0.0);
 
             //x_t+2
-            if(i == sample.size()-1 || i == sample.size()-2)
+            if(i == tokens.length-1 || i == tokens.length-2)
                 curIdx = getTokenIndex("END");
             else
-                curIdx = sample.get(i+2);
+                curIdx = tokens[i+2];
             curToken = m_tokenNames.get(curIdx);
             x_t_next_2.add((double) curIdx);
             //x_t+2 is digit

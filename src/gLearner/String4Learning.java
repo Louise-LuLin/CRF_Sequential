@@ -25,18 +25,23 @@ public class String4Learning {
     public List<Factor> getFactorList() {
         return factorList;
     }
+    
     public void setFactorList(List<Factor> factorList) {
         this.factorList = factorList;
     }
+    
     public List<Integer> getFeatureType() {
         return featureType;
     }
+    
     public void setFeatureType(List<Integer> featureType) {
         this.featureType = featureType;
     }
+    
     public int[] getLabelList(){
         return labelList;
     }
+    
     public void setLabelList(int[] labelList){
         this.labelList = labelList;
     }

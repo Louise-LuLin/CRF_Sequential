@@ -17,12 +17,6 @@ public class CRF {
     //Sequence analyzer to access all data and vocabulary
     SeqAnalyzer m_seq;
 
-    //train and test
-    ArrayList<String> m_train_string;
-    ArrayList<String> m_test_string;
-    ArrayList<int[]> m_train_label;
-    ArrayList<int[]> m_test_label;
-
     public CRF( SeqAnalyzer seq){
         m_seq = seq;
     }
@@ -102,10 +96,7 @@ public class CRF {
     }
 
     public void crossValidation(int k, String prefix){
-        m_train_label = new ArrayList<int[]>();
-        m_train_string = new ArrayList<>();
-        m_test_label = new ArrayList<int[]>();
-        m_test_string = new ArrayList<>();
+    	
 
         double[][] acc = new double[k][3];
 
@@ -113,35 +104,39 @@ public class CRF {
         Random rand = new Random();
         for(int i = 0; i < masks.length; i++)
             masks[i] = rand.nextInt(k);
-        System.out.format("[Info]Start RANDOM cross validation...\n");
+        
+        ArrayList<String4Learning> data = m_seq.getStr4Learning();
+        
+        System.out.format("[Info]Start RANDOM cross validation...\n");        
+        
         //use this loop to iterate all the folders, set train and test
         for(int i = 0; i < k; i++){
+        	ArrayList<int[]> train_label = new ArrayList<int[]>();
+        	ArrayList<String4Learning> training_data = new ArrayList<String4Learning>();
+
+        	ArrayList<int[]> test_label = new ArrayList<int[]>();
+        	ArrayList<String4Learning> testing_data = new ArrayList<String4Learning>();
+        	
             for(int j = 0; j < masks.length; j++){
                 if(masks[j] == i){
-                    m_test_string.add(m_seq.getStrings().get(j));
-                    m_test_label.add(m_seq.getLabels().get(j));
+                    test_label.add(m_seq.getLabels().get(j));
+                    testing_data.add(data.get(j));
                 }else{
-                    m_train_string.add(m_seq.getStrings().get(j));
-                    m_train_label.add(m_seq.getLabels().get(j));
+                    train_label.add(m_seq.getLabels().get(j));
+                    training_data.add(data.get(j));
                 }
             }
 
             System.out.format("==========\n[Info]Fold No. %d: train size = %d, test size = %d...\n",
-                    i, m_train_string.size(), m_test_string.size());
-
-            // Create customized training data and testing data (gLearner.String4Learning).
-            ArrayList<String4Learning> training_data = m_seq.string4Learning(m_train_string, m_train_label);
+                    i, testing_data.size(), testing_data.size());
+            
             // Build up a graph learner and train it using training data.
             GraphLearner m_graphLearner = new GraphLearner(training_data);
-
-            ArrayList<String4Learning> testing_data = m_seq.string4Learning(m_test_string, null);
-
-
 
             // Train
             long start = System.currentTimeMillis();
             ArrayList<ArrayList<Integer>> trainPrediction = m_graphLearner.doTraining(30);
-            double acc_cur = calcAcc(m_train_label, trainPrediction)[0];
+            double acc_cur = calcAcc(train_label, trainPrediction)[0];
             System.out.format("cur train acc: %f\n", acc_cur);
 
             m_graphLearner.SaveWeights(String.format("%s/weights.txt", prefix));
@@ -149,14 +144,10 @@ public class CRF {
             // Apply the trained model to the test set.
             ArrayList<FactorGraph> testGraphSet = m_graphLearner.buildFactorGraphs_test(testing_data);
             ArrayList<ArrayList<Integer>> testPrediction = m_graphLearner.doTesting(testGraphSet);
-            acc[i] = calcAcc(m_test_label, testPrediction);
+            acc[i] = calcAcc(test_label, testPrediction);
 
             System.out.format("[Stat]Train/test finished in %.2f seconds: acc_all = %.2f, acc_phrase = %.2f, acc_out = %.2f\n",
                     (System.currentTimeMillis()-start)/1000.0, acc[i][0], acc[i][1], acc[i][2]);
-            m_train_string.clear();
-            m_train_label.clear();
-            m_test_string.clear();
-            m_test_label.clear();
         }
 
         double[] mean = new double[3];

@@ -41,4 +41,8 @@ public class Sequence {
 		
 		return tokens;
 	}
+	
+	int getLength() {
+		return m_tokenList.size();
+	}
 }
