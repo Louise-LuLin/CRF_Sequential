@@ -1,38 +1,46 @@
-import edu.umass.cs.mallet.base.util.CommandOption;
-import edu.umass.cs.mallet.grmm.types.Factor;
-import edu.umass.cs.mallet.grmm.types.LogTableFactor;
-import edu.umass.cs.mallet.grmm.types.Variable;
-
-import java.io.*;
-import java.lang.reflect.Array;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import edu.umass.cs.mallet.grmm.types.Factor;
+import edu.umass.cs.mallet.grmm.types.LogTableFactor;
+import edu.umass.cs.mallet.grmm.types.Variable;
+
 public class SeqAnalyzer {
     private String m_source;
+    
     private ArrayList<String> m_labelNames;
     private HashMap<String, Integer> m_labelNameIndex;
 
     private ArrayList<String> m_tokenNames;
     private HashMap<String, Integer> m_tokenNameIndex;
 
+    //why do not we create a structure for each input string (e.g., sentence or point name)
     private ArrayList<String> m_strList;
     private ArrayList<ArrayList<Integer>> m_labelList;
     private ArrayList<ArrayList<Integer>> m_tokenList;
 
     public SeqAnalyzer(String source){
         this.m_source = source;
+        
         m_labelNames = new ArrayList<>();
         m_labelNameIndex = new HashMap<>();
+        
         m_tokenNames = new ArrayList<>();
         m_tokenNameIndex = new HashMap<>();
+        
         m_strList = new ArrayList<>();
         m_labelList = new ArrayList<>();
         m_tokenList = new ArrayList<>();
     }
 
-    public ArrayList<String> getLabelNames(){return this.m_labelNames; }
+    public ArrayList<String> getLabelNames(){ return this.m_labelNames; }
 
     public HashMap<String, Integer> getLabelNameIndex(){ return this.m_labelNameIndex; }
 
@@ -78,6 +86,7 @@ public class SeqAnalyzer {
                     idx = getTokenIndex(Character.toString(line.charAt(i))); //dynamically expand tokenNames: each char to string
                     token_idxs.add(idx);
                 }
+                
                 m_tokenList.add(token_idxs);
                 m_strList.add(line);
                 if(m_strList.size() > maxNum)
@@ -136,7 +145,7 @@ public class SeqAnalyzer {
         ArrayList<ArrayList<Integer>> token_vec = string2vec(strings);
 
         // Each string is stored as an object specifying features as table factors.
-        ArrayList<String4Learning> slist = new ArrayList<>();
+        ArrayList<String4Learning> slist = new ArrayList<String4Learning>();
 
         // This is a set of node feature vectors. Keys of the hash map are the feature type indices. The vectors are of
         // the same length equivalent to the string length. This is for a single sequence.
@@ -154,8 +163,9 @@ public class SeqAnalyzer {
             Variable[] allVars = new Variable[varNodeSize];
             for(int i = 0; i < allVars.length; i++)
                 allVars[i] = new Variable(m_labelNames.size()); //each label variable has this many outcomes
-            ArrayList<Factor> factorList = new ArrayList<>();   // list of table factors for the current string
-            ArrayList<Integer> featureType = new ArrayList<>(); // corresponding feature ID for each list of factors
+            
+            ArrayList<Factor> factorList = new ArrayList<Factor>();   // list of table factors for the current string
+            ArrayList<Integer> featureType = new ArrayList<Integer>(); // corresponding feature ID for each list of factors
 
             //step 2: add node features
             node_features = constructNodeFeature(token_vec.get(idx_sample));
@@ -174,6 +184,7 @@ public class SeqAnalyzer {
                             }
                             else
                                 Arrays.fill(feature_value_arr, 0.0);
+                            
                             ptl = LogTableFactor.makeFromLogValues(new Variable[]{allVars[j]}, feature_value_arr);
                             factorList.add(ptl);
                             for(int label_i = 0; label_i < m_labelNames.size(); label_i++)
@@ -286,7 +297,7 @@ public class SeqAnalyzer {
                 x_t_pre_1_is_digit.add(0.0);
 
             //x_t-2
-            if(i == 0 || i == 1)
+            if(i < 2)
                 curIdx = getTokenIndex("START");
             else
                 curIdx = sample.get(i-2);
