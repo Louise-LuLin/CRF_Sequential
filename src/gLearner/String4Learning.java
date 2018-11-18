@@ -9,9 +9,9 @@ public class String4Learning {
 
     List<Factor> factorList;
     List<Integer> featureType;  //feature type correspond to factors
-    List<Integer> labelList;    //a sequence of labels (its length is the string length)
+    int[] labelList;    //a sequence of labels (its length is the string length)
 
-    public String4Learning(List<Factor> factorList, List<Integer> featureType, List<Integer> labelList) {
+    public String4Learning(List<Factor> factorList, List<Integer> featureType, int[] labelList) {
         this.factorList = factorList;
         this.featureType = featureType;
         this.labelList = labelList;
@@ -34,10 +34,10 @@ public class String4Learning {
     public void setFeatureType(List<Integer> featureType) {
         this.featureType = featureType;
     }
-    public List<Integer> getLabelList(){
+    public int[] getLabelList(){
         return labelList;
     }
-    public void setLabelList(List<Integer> labelList){
+    public void setLabelList(int[] labelList){
         this.labelList = labelList;
     }
 

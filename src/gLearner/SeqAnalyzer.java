@@ -19,46 +19,64 @@ import edu.umass.cs.mallet.grmm.types.Variable;
 public class SeqAnalyzer {
     private String m_source;
     
-    private ArrayList<String> m_labelNames;
-    private HashMap<String, Integer> m_labelNameIndex;
+    private ArrayList<String> m_labelNames;//text content of the labels Y
+    private HashMap<String, Integer> m_labelNameIndex;//index of the labels Y
 
-    private ArrayList<String> m_tokenNames;
-    private HashMap<String, Integer> m_tokenNameIndex;
+    private ArrayList<String> m_tokenNames;//text content of the words X
+    private HashMap<String, Integer> m_tokenNameIndex;//index of the words X
 
     //why do not we create a structure for each input string (e.g., sentence or point name)
-    private ArrayList<String> m_strList;
-    private ArrayList<ArrayList<Integer>> m_labelList;
-    private ArrayList<ArrayList<Integer>> m_tokenList;
+    private ArrayList<Sequence> m_seqList;
 
     private Map<Integer, Boolean> m_mask;
 
     public SeqAnalyzer(String source){
         this.m_source = source;
         
-        m_labelNames = new ArrayList<>();
-        m_labelNameIndex = new HashMap<>();
+        m_labelNames = new ArrayList<String>();
+        m_labelNameIndex = new HashMap<String, Integer>();
         
-        m_tokenNames = new ArrayList<>();
-        m_tokenNameIndex = new HashMap<>();
+        m_tokenNames = new ArrayList<String>();
+        m_tokenNameIndex = new HashMap<String, Integer>();
         
-        m_strList = new ArrayList<>();
-        m_labelList = new ArrayList<>();
-        m_tokenList = new ArrayList<>();
+        m_seqList = new ArrayList<Sequence>();
         m_mask = null;
     }
 
+    public String getSource() { return m_source; } //where we load the data
 
     public void setMask(Map<Integer, Boolean> masks) { m_mask = masks; }
 
-    public ArrayList<String> getLabelNames(){return this.m_labelNames; }
+    public ArrayList<String> getLabelNames(){ return this.m_labelNames; }
 
     public HashMap<String, Integer> getLabelNameIndex(){ return this.m_labelNameIndex; }
 
-    public ArrayList<String> getStrings(){ return this.m_strList; }
+    public ArrayList<String> getStrings(){ 
+    	ArrayList<String> strList = new ArrayList<String>();
+    	
+    	for(Sequence seq:m_seqList) 
+    		strList.add(seq.m_content);
+    			
+    	return strList; 
+    }
 
-    public ArrayList<ArrayList<Integer>> getLabels() { return this.m_labelList; }
+    public ArrayList<int[]> getLabels() { 
+    	ArrayList<int[]> labelList = new ArrayList<int[]>();
+    	
+    	for(Sequence seq:m_seqList)
+    		labelList.add(seq.getLabels());
+    	
+    	return labelList; 
+    }
 
-    public ArrayList<ArrayList<Integer>> getTokens() { return this.m_tokenList; }
+    public ArrayList<int[]> getTokens() {
+    	ArrayList<int[]> tokenList = new ArrayList<int[]>();
+    	
+    	for(Sequence seq:m_seqList)
+    		tokenList.add(seq.getTokens());
+    	
+    	return tokenList;
+    }
 
     public void saveTokenNames(String filePath){
         try{
@@ -82,24 +100,24 @@ public class SeqAnalyzer {
         }
     }
 
-    public void loadString(String filePath, int maxNum){
-        m_strList.clear();
-        m_tokenList.clear();
+    public void loadSequence(String filePath, int maxNum){
+    	m_seqList.clear();
+    	
         // Read training strings.
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
-            String line;
-            ArrayList<Integer> token_idxs;
+            String line, token;
+            
             while ((line = br.readLine()) != null && line.length() > 0) {
-                token_idxs = new ArrayList<>();
+            	Sequence seq = new Sequence(line);
                 int idx;
                 for(int i = 0 ; i < line.length(); i++){
-                    idx = getTokenIndex(Character.toString(line.charAt(i))); //dynamically expand tokenNames: each char to string
-                    token_idxs.add(idx);
+                	token = Character.toString(line.charAt(i));
+                    idx = getTokenIndex(token); //dynamically expand tokenNames: each char to string
+                    seq.addToken(token, idx);
                 }
                 
-                m_tokenList.add(token_idxs);
-                m_strList.add(line);
-                if(m_strList.size() > maxNum)
+                m_seqList.add(seq);
+                if(m_seqList.size() > maxNum)
                     break;
             }
         } catch (Exception e){
@@ -107,24 +125,25 @@ public class SeqAnalyzer {
         }
     }
 
+    //this is a poor design of loading input files, where we have to assume the alignment by line number
     public void loadLabel(String filePath, int maxNum){
-        m_labelList.clear();
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             String line;
             String[] labels;
-            ArrayList<Integer> label_idxs;
+            int lineNo = 0;
+            
             while ((line = br.readLine()) != null && line.length() > 0) {
+            	Sequence seq = m_seqList.get(lineNo);
+            	
                 labels = line.split(",");
-                label_idxs = new ArrayList<>();
-                int idx;
+                int tokenIdx = 0;
                 for(String s: labels){
-                    if(s.equals(""))
+                    if(s.isEmpty())
                         continue;
-                    idx = getLabelIndex(s); //dynamically expand labelNames
-                    label_idxs.add(idx);
+                    seq.assignLabel(tokenIdx++, getLabelIndex(s));//dynamically expand labelNames
                 }
-                m_labelList.add(label_idxs);
-                if(m_labelList.size() > maxNum)
+                
+                if(++lineNo > maxNum)
                     break;
             }
         } catch (Exception e){
@@ -135,6 +154,7 @@ public class SeqAnalyzer {
     private ArrayList<ArrayList<Integer>> string2vec(ArrayList<String> strings){
         ArrayList<ArrayList<Integer>> token_vec = new ArrayList<>();
         ArrayList<Integer> token_idxs;
+        
         for(String str : strings){
             token_idxs = new ArrayList<>();
             int idx;
@@ -149,7 +169,7 @@ public class SeqAnalyzer {
     }
 
     public ArrayList<String4Learning> string4Learning(ArrayList<String> strings,
-                                                      ArrayList<ArrayList<Integer>> label_vec){
+                                                      ArrayList<int[]> label_vec){
 
         System.out.format("[Info]Label size: %d, token size: %d\n", m_labelNames.size(), m_tokenNames.size());
         ArrayList<ArrayList<Integer>> token_vec = string2vec(strings);

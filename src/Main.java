@@ -18,7 +18,7 @@ public class Main {
 
         /**** load string and label data ****/
         SeqAnalyzer seqAnalyzer = new SeqAnalyzer(para.m_source);
-        seqAnalyzer.loadString(strPath, para.m_samplesize);
+        seqAnalyzer.loadSequence(strPath, para.m_samplesize);
         seqAnalyzer.loadLabel(lblPath, para.m_samplesize);
         seqAnalyzer.saveTokenNames(tkNamePath);
         seqAnalyzer.saveLabelNames(lbNamePath);
@@ -30,7 +30,7 @@ public class Main {
          */
         HashMap<Integer, Boolean> featureMasks = new HashMap<Integer, Boolean>();
         for(Integer type : para.m_mask){
-            featureMasks.put(type, new Boolean(false));
+            featureMasks.put(type, Boolean.FALSE);
         }
         seqAnalyzer.setMask(featureMasks);
 

@@ -20,8 +20,8 @@ public class CRF {
     //train and test
     ArrayList<String> m_train_string;
     ArrayList<String> m_test_string;
-    ArrayList<ArrayList<Integer>> m_train_label;
-    ArrayList<ArrayList<Integer>> m_test_label;
+    ArrayList<int[]> m_train_label;
+    ArrayList<int[]> m_test_label;
 
     public CRF( SeqAnalyzer seq){
         m_seq = seq;
@@ -29,7 +29,7 @@ public class CRF {
 
     public SeqAnalyzer getSeq(){ return this.m_seq; }
 
-    private double[] calcAcc(ArrayList<ArrayList<Integer>> true_labels, ArrayList<ArrayList<Integer>> pred_labels ){
+    private double[] calcAcc(ArrayList<int[]> true_labels, ArrayList<ArrayList<Integer>> pred_labels ){
         double[] accs = new double[3]; //all_acc, phrase_acc, out_acc
         if(true_labels.size() != pred_labels.size()) {
             System.err.format("[Err]Prediction has different length than ground truth.\n");
@@ -42,8 +42,8 @@ public class CRF {
             int label_idx_true, label_idx_pred;
             String label_true;
             String label_pred;
-            for(int j = 0; j < true_labels.get(i).size(); j++){
-                label_idx_true = true_labels.get(i).get(j);
+            for(int j = 0; j < true_labels.get(i).length; j++){
+                label_idx_true = true_labels.get(i).length;
                 label_true = m_seq.getLabelNames().get(label_idx_true);
                 label_idx_pred = pred_labels.get(i).get(j);
                 label_pred = m_seq.getLabelNames().get(label_idx_pred);
@@ -102,9 +102,9 @@ public class CRF {
     }
 
     public void crossValidation(int k, String prefix){
-        m_train_label = new ArrayList<>();
+        m_train_label = new ArrayList<int[]>();
         m_train_string = new ArrayList<>();
-        m_test_label = new ArrayList<>();
+        m_test_label = new ArrayList<int[]>();
         m_test_string = new ArrayList<>();
 
         double[][] acc = new double[k][3];

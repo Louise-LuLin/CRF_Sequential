@@ -245,9 +245,9 @@ public class GraphLearner implements Maximizable.ByGradient{
             sample = m_trainSampleSet.get(sampleID);
 
             //get the graph's assignment over the graph
-            assignment = new int[sample.labelList.size()];
-            for(int i=0; i<sample.labelList.size(); i++)
-                assignment[i] = sample.labelList.get(i);
+            assignment = new int[sample.labelList.length];
+            for(int i=0; i<sample.labelList.length; i++)
+                assignment[i] = sample.labelList[i];
             //System.out.println(graph.numVariables());
             //for(int i=0;i<assignment.length;i++)System.out.println(assignment[i]);
             assign = new Assignment(graph, assignment);
