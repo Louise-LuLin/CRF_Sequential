@@ -141,7 +141,9 @@ public class CRF {
 
             // Apply the trained model to the test set.
             ArrayList<ArrayList<Integer>> testPrediction = new ArrayList<>();
+            int j=0;
             for(Sequence seq : testing_seq) {
+                System.out.format("-- test sample %d\n", j++);
                 FactorGraph testGraph = m_graphLearner.buildFactorGraph_test(m_seq.getStr4Learning(seq, "test"));
                 testPrediction.add(m_graphLearner.doTesting(testGraph));
             }
