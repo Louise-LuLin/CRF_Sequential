@@ -105,27 +105,30 @@ public class CRF {
         for(int i = 0; i < masks.length; i++)
             masks[i] = rand.nextInt(k);
         
-        ArrayList<String4Learning> data = m_seq.getStr4Learning();
-        
         System.out.format("[Info]Start RANDOM cross validation...\n");        
         
         //use this loop to iterate all the folders, set train and test
         for(int i = 0; i < k; i++){
         	ArrayList<int[]> train_label = new ArrayList<int[]>();
-        	ArrayList<String4Learning> training_data = new ArrayList<String4Learning>();
+        	ArrayList<Sequence> training_seq = new ArrayList<>();
+            ArrayList<String4Learning> training_data;
 
         	ArrayList<int[]> test_label = new ArrayList<int[]>();
-        	ArrayList<String4Learning> testing_data = new ArrayList<String4Learning>();
+        	ArrayList<Sequence> testing_seq = new ArrayList<>();
+            ArrayList<String4Learning> testing_data;
         	
             for(int j = 0; j < masks.length; j++){
                 if(masks[j] == i){
                     test_label.add(m_seq.getLabels().get(j));
-                    testing_data.add(data.get(j));
+                    testing_seq.add(m_seq.getSequences().get(j));
                 }else{
                     train_label.add(m_seq.getLabels().get(j));
-                    training_data.add(data.get(j));
+                    training_seq.add(m_seq.getSequences().get(j));
                 }
             }
+
+            training_data = m_seq.getStr4Learning(training_seq, "train");
+            testing_data = m_seq.getStr4Learning(testing_seq, "test");
 
             System.out.format("==========\n[Info]Fold No. %d: train size = %d, test size = %d...\n",
                     i, training_data.size(), testing_data.size());

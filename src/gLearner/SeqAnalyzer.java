@@ -69,6 +69,8 @@ public class SeqAnalyzer {
     	return labelList; 
     }
 
+    public ArrayList<Sequence> getSequences() { return this.m_seqList; }
+
     public ArrayList<int[]> getTokens() {
     	ArrayList<int[]> tokenList = new ArrayList<int[]>();
     	
