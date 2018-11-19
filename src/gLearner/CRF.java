@@ -104,18 +104,16 @@ public class CRF {
         Random rand = new Random();
         for(int i = 0; i < masks.length; i++)
             masks[i] = rand.nextInt(k);
-        
+
         System.out.format("[Info]Start RANDOM cross validation...\n");        
         
         //use this loop to iterate all the folders, set train and test
         for(int i = 0; i < k; i++){
         	ArrayList<int[]> train_label = new ArrayList<int[]>();
-        	ArrayList<Sequence> training_seq = new ArrayList<>();
-            ArrayList<String4Learning> training_data;
+            ArrayList<String4Learning> training_data = new ArrayList<String4Learning>();
 
         	ArrayList<int[]> test_label = new ArrayList<int[]>();
-        	ArrayList<Sequence> testing_seq = new ArrayList<>();
-            ArrayList<String4Learning> testing_data;
+            ArrayList<Sequence> testing_seq = new ArrayList<Sequence>();
         	
             for(int j = 0; j < masks.length; j++){
                 if(masks[j] == i){
@@ -123,15 +121,12 @@ public class CRF {
                     testing_seq.add(m_seq.getSequences().get(j));
                 }else{
                     train_label.add(m_seq.getLabels().get(j));
-                    training_seq.add(m_seq.getSequences().get(j));
+                    training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(j), "train"));
                 }
             }
 
-            training_data = m_seq.getStr4Learning(training_seq, "train");
-            testing_data = m_seq.getStr4Learning(testing_seq, "test");
-
             System.out.format("==========\n[Info]Fold No. %d: train size = %d, test size = %d...\n",
-                    i, training_data.size(), testing_data.size());
+                    i, training_data.size(), testing_seq.size());
             
             // Build up a graph learner and train it using training data.
             GraphLearner m_graphLearner = new GraphLearner(training_data);
@@ -145,8 +140,11 @@ public class CRF {
             m_graphLearner.SaveWeights(String.format("%s/weights.txt", prefix));
 
             // Apply the trained model to the test set.
-            ArrayList<FactorGraph> testGraphSet = m_graphLearner.buildFactorGraphs_test(testing_data);
-            ArrayList<ArrayList<Integer>> testPrediction = m_graphLearner.doTesting(testGraphSet);
+            ArrayList<ArrayList<Integer>> testPrediction = new ArrayList<>();
+            for(Sequence seq : testing_seq) {
+                FactorGraph testGraph = m_graphLearner.buildFactorGraph_test(m_seq.getStr4Learning(seq, "test"));
+                testPrediction.add(m_graphLearner.doTesting(testGraph));
+            }
             acc[i] = calcAcc(test_label, testPrediction);
 
             System.out.format("[Stat]Train/test finished in %.2f seconds: acc_all = %.2f, acc_phrase = %.2f, acc_out = %.2f\n",
