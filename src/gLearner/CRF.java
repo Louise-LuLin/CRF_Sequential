@@ -37,7 +37,7 @@ public class CRF {
             String label_true;
             String label_pred;
             for(int j = 0; j < true_labels.get(i).length; j++){
-                label_idx_true = true_labels.get(i).length;
+                label_idx_true = true_labels.get(i)[j];
                 label_true = m_seq.getLabelNames().get(label_idx_true);
                 label_idx_pred = pred_labels.get(i).get(j);
                 label_pred = m_seq.getLabelNames().get(label_idx_pred);
@@ -128,14 +128,14 @@ public class CRF {
             }
 
             System.out.format("==========\n[Info]Fold No. %d: train size = %d, test size = %d...\n",
-                    i, testing_data.size(), testing_data.size());
+                    i, training_data.size(), testing_data.size());
             
             // Build up a graph learner and train it using training data.
             GraphLearner m_graphLearner = new GraphLearner(training_data);
 
             // Train
             long start = System.currentTimeMillis();
-            ArrayList<ArrayList<Integer>> trainPrediction = m_graphLearner.doTraining(30);
+            ArrayList<ArrayList<Integer>> trainPrediction = m_graphLearner.doTraining(1);
             double acc_cur = calcAcc(train_label, trainPrediction)[0];
             System.out.format("cur train acc: %f\n", acc_cur);
 

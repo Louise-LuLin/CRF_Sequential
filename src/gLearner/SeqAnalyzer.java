@@ -152,7 +152,7 @@ public class SeqAnalyzer {
     }
 
     //To create the training sequence
-    public ArrayList<String4Learning> getStr4Learning(){
+    public ArrayList<String4Learning> getStr4Learning(ArrayList<Sequence> seqList, String mode){
         System.out.format("[Info]Label size: %d, token size: %d\n", m_labelNames.size(), m_tokenNames.size());        
 
         // Each string is stored as an object specifying features as table factors.
@@ -165,9 +165,10 @@ public class SeqAnalyzer {
 
         // For each training sample, construct a factor graph, and a list of table factors to specify edge
         // and node features.
-        for(Sequence seq:m_seqList){
+        for(Sequence seq:seqList){
             //step 1: construct the graph
             int varNodeSize = seq.getLength();
+            int[] label_vec = seq.getLabels();
             Variable[] allVars = new Variable[varNodeSize];
             for(int i = 0; i < allVars.length; i++)
                 allVars[i] = new Variable(m_labelNames.size()); //each label variable has this many outcomes. But we can reduce this ahead of time based on the nature of our problem?
@@ -189,7 +190,7 @@ public class SeqAnalyzer {
                 for (Integer type : node_features.keySet()) {// for each feature type
                     //skip feature type with mask
                     if(m_mask != null && m_mask.containsKey(type)
-                            && m_mask.get(type).booleanValue() == false)
+                            && !m_mask.get(type))
                         continue;
 
                     cur_feature = node_features.get(type);
@@ -223,53 +224,50 @@ public class SeqAnalyzer {
             }
 
             //step 3: add edge features
-            if(m_mask == null || !m_mask.containsKey(10) || m_mask.get(10).booleanValue() == true) {
+            if(m_mask == null || !m_mask.containsKey(10) || !m_mask.get(10)) {
                 int node_feature_size = (m_tokenNames.size() * m_labelNames.size()) * 5 // This is incorrect! As we might mask out some node features!!!!
                         + m_labelNames.size() * 5;
-
-                int[] idxs = new int[m_labelNames.size()*m_labelNames.size()];//why are we using varNodeSize below to iterate over this square matrix?
-                for (int j = 0; j < varNodeSize - 1; j++) {
-                    for (int i = 0; i < m_labelNames.size(); i++) {
-                        idxs[m_labelNames.size() * j + i] = m_labelNames.size() * j + i;
-                    }
-                }
+                //the size is used to index edge feature such that the index will not overlap for factor graph, we take the largest space for node feature index
 
                 for (int j = 0; j < varNodeSize - 1; j++) {
-                    for (int i = 0; i < m_labelNames.size(); i++) {
-                        for (int k = 0; k < m_labelNames.size(); k++) {
-                            trans_feature_arr = label_transition(i, k);
-                            int[] szs = new int[]{m_labelNames.size(), m_labelNames.size()};
-                            SparseMatrixn sparse = new SparseMatrixn(szs, idxs, trans_feature_arr);
-                            ptl = LogTableFactor.makeFromMatrix(
-                                    new Variable[]{allVars[j], allVars[j + 1]}, sparse);
-                            factorList.add(ptl);
-                            featureType.add(node_feature_size + i * m_labelNames.size() + k);
+//                    for (int i = 0; i < m_labelNames.size(); i++) {
+//                        for (int k = 0; k < m_labelNames.size(); k++) {
+//                            trans_feature_arr = label_transition(i, k);
+//                            ptl = LogTableFactor.makeFromValues(
+//                                   new Variable[]{allVars[j], allVars[j + 1]}, trans_feature_arr);
+//                            factorList.add(ptl);
+//                            featureType.add(node_feature_size + i * m_labelNames.size() + k);
+//                        }
+//                    }
+
+                    if(mode.equals("train")) {//train
+                        int curIdx_1 = label_vec[j];
+                        int curIdx_2 = label_vec[j + 1];
+                        trans_feature_arr = label_transition(curIdx_1, curIdx_2);
+
+                        ptl = LogTableFactor.makeFromValues(
+                                new Variable[]{allVars[j], allVars[j + 1]}, trans_feature_arr);
+
+                        factorList.add(ptl);
+                        featureType.add(node_feature_size + 10 + curIdx_1 * m_labelNames.size() + curIdx_2);
+                    }else{//test
+                        for (int i = 0; i < m_labelNames.size(); i++) {
+                            for (int k = 0; k < m_labelNames.size(); k++) {
+                                trans_feature_arr = label_transition(i, k);
+                                ptl = LogTableFactor.makeFromValues(
+                                        new Variable[]{allVars[j], allVars[j + 1]}, trans_feature_arr);
+                                factorList.add(ptl);
+                                featureType.add(node_feature_size + 10 + i * m_labelNames.size() + k);
+                            }
                         }
                     }
-//                    trans_feature_arr = new double[m_labelNames.size() * m_labelNames.size()];
-//                    Arrays.fill(trans_feature_arr, Math.exp(1.0));
-//                    if(label_vec != null){
-//                        int curIdx_1 = label_vec.get(idx_sample).get(j);
-//                        int curIdx_2 = label_vec.get(idx_sample).get(j+1);
-//                        trans_feature_arr = label_transition(curIdx_1, curIdx_2);
-//                    }
-//
-//                    ptl = LogTableFactor.makeFromValues(
-//                            new Variable[]{allVars[j], allVars[j + 1]}, trans_feature_arr);
-//
-//                    factorList.add(ptl);
-//                    featureType.add(node_feature_size + 10);
                 }
             }
 
             // Add the list of table factors into the sample object.
-            int[] label_vec = seq.getLabels();
             
-            if(label_vec != null) {//why would we encounter this?
-                str = new String4Learning(factorList, featureType, label_vec);
-            }else{
-                str = new String4Learning(factorList, featureType);
-            }
+            str = new String4Learning(factorList, featureType, label_vec);
+
             slist.add(str);
         }
 
