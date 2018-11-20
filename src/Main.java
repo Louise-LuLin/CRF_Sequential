@@ -30,7 +30,7 @@ public class Main {
          */
         HashMap<Integer, Boolean> featureMasks = new HashMap<Integer, Boolean>();
         for(Integer type : para.m_mask){
-            featureMasks.put(type, Boolean.FALSE);
+            featureMasks.put(type, Boolean.TRUE);
         }
         seqAnalyzer.setMask(featureMasks);
 
