@@ -371,8 +371,10 @@ public class GraphLearner implements Maximizable.ByGradient{
         System.out.println("Training process start, with likelihood " + oldLikelihood);
         System.out.println("Training process finish, with likelihood " + likelihood);
 
-
-        ArrayList<ArrayList<Integer>> testPrediction = doTesting(m_trainGraphSet);
+        ArrayList<ArrayList<Integer>> testPrediction = new ArrayList<>();
+        for(FactorGraph graph:m_trainGraphSet){
+            testPrediction.add(doTesting(graph));
+        }
 
 
 //        try {
@@ -421,93 +423,77 @@ public class GraphLearner implements Maximizable.ByGradient{
         }
     }
 
-    public ArrayList<ArrayList<Integer>> doTesting(ArrayList<FactorGraph> testGraphSet){
+    public ArrayList<Integer> doTesting(FactorGraph graph){
 
-        FactorGraph graph;
         AssignmentIterator it;
         Factor ptl;
         Variable variable;
         int varSize, var, labelID = 0;
         double max;
-        ArrayList<ArrayList<Integer>> prediction = new ArrayList<>(testGraphSet.size());
-        ArrayList<Integer> pred_tmp;
+        ArrayList<Integer> pred = new ArrayList<>();
 
 //        Inferencer m_infer = TRP.createForMaxProduct();
         Inferencer m_infer = LoopyBP.createForMaxProduct();
-        for(int sampleID=0; sampleID<testGraphSet.size(); sampleID++) {
-            graph = testGraphSet.get(sampleID);
-            varSize = graph.numVariables();
-            m_infer.computeMarginals(graph);  //begin to collect the expectations
 
-            pred_tmp = new ArrayList<>();
-            for(var=0; var<varSize; var++) {
-                //retrieve the MAP configuration
-                variable = graph.get(var);
-                ptl = m_infer.lookupMarginal(variable);
-                max = -Double.MAX_VALUE;
-                for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
-                    //System.out.println(ptl.value(it));
-                    if (ptl.value(it)>max) {
-                        max = ptl.value(it);
-                        labelID = it.indexOfCurrentAssn();
-                    }
+        varSize = graph.numVariables();
+        m_infer.computeMarginals(graph);  //begin to collect the expectations
+
+        for(var=0; var<varSize; var++) {
+            //retrieve the MAP configuration
+            variable = graph.get(var);
+            ptl = m_infer.lookupMarginal(variable);
+            max = -Double.MAX_VALUE;
+            for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
+                //System.out.println(ptl.value(it));
+                if (ptl.value(it)>max) {
+                    max = ptl.value(it);
+                    labelID = it.indexOfCurrentAssn();
                 }
-                pred_tmp.add(labelID);
-                //System.out.println(labelID);
             }
-            prediction.add(pred_tmp);
         }
-        return prediction;
+        pred.add(labelID);
 
+        return pred;
     }
 
     // Build a set of factor graphs for the test set.
-    public ArrayList<FactorGraph> buildFactorGraphs_test(ArrayList<String4Learning> testSampleSet){
+    public FactorGraph buildFactorGraphs_test(String4Learning tmpString){
 
-        FactorGraph stringGraph;
-        String4Learning tmpString;
+        FactorGraph stringGraph = new FactorGraph();
         Factor factor;
         VarSet clique;
-        int index, feaID, stringID;
+        int index, feaID;
         HashMap<VarSet, Integer> factorIndex = new HashMap<>();
         Vector<Factor> factorList = new Vector<>();
-        ArrayList<FactorGraph> testGraphSet = new ArrayList<>();
 
-        for(stringID=0; stringID<testSampleSet.size(); stringID++){
+        factorIndex.clear();
+        factorList.clear();
 
-            tmpString = testSampleSet.get(stringID);
-            stringGraph = new FactorGraph();
-            factorIndex.clear();
-            factorList.clear();
-
-            for(index=0; index<tmpString.factorList.size(); index++){
-                factor = tmpString.factorList.get(index);
-                Factor copy = factor.duplicate();
-                if(m_featureMap.containsKey(tmpString.featureType.get(index))) {
-                    feaID = m_featureMap.get(tmpString.featureType.get(index)); // feature ID corresponding to its weight
-                    copy.exponentiate(m_weights[feaID]);  // potential = feature * weight
-                }else{
-                    copy.exponentiate(0);
-                }
-                clique = copy.varSet(); // to deal with factors defined over the same clique
-                if( factorIndex.containsKey(clique) ){
-                    feaID = factorIndex.get(clique);
-                    factor = factorList.get(feaID);
-                    factor.multiplyBy(copy);
-                } else {
-                    factorIndex.put(clique, factorList.size());
-                    factorList.add(copy);
-                }
+        for(index=0; index<tmpString.factorList.size(); index++){
+            factor = tmpString.factorList.get(index);
+            Factor copy = factor.duplicate();
+            if(m_featureMap.containsKey(tmpString.featureType.get(index))) {
+                feaID = m_featureMap.get(tmpString.featureType.get(index)); // feature ID corresponding to its weight
+                copy.exponentiate(m_weights[feaID]);  // potential = feature * weight
+            }else{
+                copy.exponentiate(0);
             }
-
-            //construct the graph
-            for(index=0; index<factorList.size(); index++)
-                stringGraph.addFactor(factorList.get(index));
-            testGraphSet.add(stringGraph);
-
+            clique = copy.varSet(); // to deal with factors defined over the same clique
+            if( factorIndex.containsKey(clique) ){
+                feaID = factorIndex.get(clique);
+                factor = factorList.get(feaID);
+                factor.multiplyBy(copy);
+            } else {
+                factorIndex.put(clique, factorList.size());
+                factorList.add(copy);
+            }
         }
-        System.out.println("Finish building " + testGraphSet.size() + " testing factor graphs...");
-        return testGraphSet;
+
+        //construct the graph
+        for(index=0; index<factorList.size(); index++)
+            stringGraph.addFactor(factorList.get(index));
+
+        return stringGraph;
 
     }
 
