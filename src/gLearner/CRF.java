@@ -113,13 +113,13 @@ public class CRF {
             ArrayList<String4Learning> training_data = new ArrayList<String4Learning>();
 
         	ArrayList<int[]> test_label = new ArrayList<int[]>();
-            ArrayList<Sequence> testing_seq = new ArrayList<Sequence>();
-        	
-            for(int j = 0; j < masks.length; j++){
-                if(masks[j] == i){
+            ArrayList<Sequence> testing_seq = new ArrayList<>();
+
+            for(int j = 0; j < masks.length; j++) {
+                if (masks[j] == i) {
                     test_label.add(m_seq.getLabels().get(j));
                     testing_seq.add(m_seq.getSequences().get(j));
-                }else{
+                } else {
                     train_label.add(m_seq.getLabels().get(j));
                     training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(j), "train"));
                 }
@@ -133,7 +133,7 @@ public class CRF {
 
             // Train
             long start = System.currentTimeMillis();
-            ArrayList<ArrayList<Integer>> trainPrediction = m_graphLearner.doTraining(1);
+            ArrayList<ArrayList<Integer>> trainPrediction = m_graphLearner.doTraining(30);
             double acc_cur = calcAcc(train_label, trainPrediction)[0];
             System.out.format("cur train acc: %f\n", acc_cur);
 
@@ -145,7 +145,7 @@ public class CRF {
             int j=0;
             for(Sequence seq : testing_seq) {
                 System.out.format("-- test sample %d\n", j++);
-                FactorGraph testGraph = m_graphLearner.buildFactorGraph_test(m_seq.getStr4Learning(seq, "test"));
+                FactorGraph testGraph = m_graphLearner.buildFactorGraphs_test(m_seq.getStr4Learning(seq, "test"));
                 pred_tmp = m_graphLearner.doTesting(testGraph);
                 testPrediction.add(pred_tmp);
                 System.out.format("[debug]predicted lable: %d, %d, %d, %d, %d\n",

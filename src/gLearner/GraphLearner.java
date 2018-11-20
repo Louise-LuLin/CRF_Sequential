@@ -3,7 +3,6 @@ package gLearner;
 import edu.umass.cs.mallet.base.maximize.LimitedMemoryBFGS;
 import edu.umass.cs.mallet.base.maximize.Maximizable;
 import edu.umass.cs.mallet.base.maximize.Maximizer;
-import edu.umass.cs.mallet.base.types.ArrayListSequence;
 import edu.umass.cs.mallet.grmm.inference.Inferencer;
 import edu.umass.cs.mallet.grmm.inference.LoopyBP;
 import edu.umass.cs.mallet.grmm.types.*;
@@ -372,21 +371,11 @@ public class GraphLearner implements Maximizable.ByGradient{
         System.out.println("Training process start, with likelihood " + oldLikelihood);
         System.out.println("Training process finish, with likelihood " + likelihood);
 
-
         ArrayList<ArrayList<Integer>> testPrediction = new ArrayList<>();
         for(FactorGraph graph:m_trainGraphSet){
             testPrediction.add(doTesting(graph));
         }
 
-//        try {
-//            Map<Integer, Double> weights = getWeights();
-//            for(Integer fea : weights.keySet())
-//                m_writer.write(fea.toString() + " : " + weights.get(fea).toString() + " ");
-//            m_writer.write("\t" + likelihood + "\n");
-//            m_writer.close();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
         return testPrediction;
     }
 
@@ -452,15 +441,13 @@ public class GraphLearner implements Maximizable.ByGradient{
                 }
             }
             pred.add(labelID);
-            //System.out.println(labelID);
         }
 
         return pred;
-
     }
 
     // Build a set of factor graphs for the test set.
-    public FactorGraph buildFactorGraph_test(String4Learning tmpString){
+    public FactorGraph buildFactorGraphs_test(String4Learning tmpString){
 
         FactorGraph stringGraph = new FactorGraph();
         Factor factor;
@@ -497,6 +484,7 @@ public class GraphLearner implements Maximizable.ByGradient{
             stringGraph.addFactor(factorList.get(index));
 
         return stringGraph;
+
     }
 
     private void allocateFoldAssignment(int fold)

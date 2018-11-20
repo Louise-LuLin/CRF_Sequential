@@ -69,8 +69,6 @@ public class SeqAnalyzer {
     	return labelList; 
     }
 
-    public ArrayList<Sequence> getSequences() { return this.m_seqList; }
-
     public ArrayList<int[]> getTokens() {
     	ArrayList<int[]> tokenList = new ArrayList<int[]>();
     	
@@ -79,6 +77,8 @@ public class SeqAnalyzer {
     	
     	return tokenList;
     }
+
+    public ArrayList<Sequence> getSequences() { return this.m_seqList; }
 
     public void saveTokenNames(String filePath){
         try{
@@ -151,6 +151,7 @@ public class SeqAnalyzer {
                     break;
             }
             getLabelIndex("START");
+            getTokenIndex("END");
             System.out.format("[Info]Label size: %d\n", m_labelNames.size());
 
         } catch (Exception e){
@@ -160,13 +161,14 @@ public class SeqAnalyzer {
 
     //To create the training sequence
     public String4Learning getStr4Learning(Sequence seq, String mode){
-
         // Each string is stored as an object specifying features as table factors.
         String4Learning str;
-
+        
         // Feature vectors. Key: feature type indices. The vectors are of
         // the same length equivalent to the string length.
         HashMap<Integer, ArrayList<Double>> node_features;
+
+        HashMap<Integer, ArrayList<Integer>> position_features;
 
         // For each training sample, construct a factor graph, and a list of table factors to specify edge
         // and node features.
@@ -192,47 +194,65 @@ public class SeqAnalyzer {
             // token itself:   0 ~ label_size * (token_size + 2) * (num of type%2==0)
             // token is digit: label_size * (token_size + 2) * 5 (=A) ~ A + label_size * (num of type%2==1)
             for (Integer type : node_features.keySet()) {// for each feature type
-                //skip feature type with mask
-                if(m_mask != null && m_mask.containsKey(type)
-                        && !m_mask.get(type))
+                //skip feature type without mask
+                if(!m_mask.containsKey(type))
                     continue;
 
                 cur_feature = node_features.get(type);
 
                 if (type % 2 == 0) { // x_t/t-1...: type=0,2,4,6,8
-                    for (int k = 0; k < m_tokenNames.size(); k++) {
-                        for(int label_i = 0; label_i < m_labelNames.size(); label_i++) {
-                            if (cur_feature.get(j).intValue() == k) {
-                                Arrays.fill(feature_value_arr, 1.0);
-                                feature_value_arr[label_i] = Math.exp(1.0);
+                    if(mode.equals("train")){
+                        int cur_label = label_vec[j];
+                        int cur_token = cur_feature.get(j).intValue();
+                        Arrays.fill(feature_value_arr, 1.0);
+                        feature_value_arr[cur_label] = Math.exp(1.0);
+                        ptl = LogTableFactor.makeFromValues(new Variable[]{allVars[j]}, feature_value_arr);
+                        factorList.add(ptl);
+                        featureType.add((m_tokenNames.size() * m_labelNames.size()) * (type / 2) +
+                                m_labelNames.size() * cur_token + cur_label);
+                    } else {
+                        for (int k = 0; k < m_tokenNames.size(); k++) {
+                            for (int label_i = 0; label_i < m_labelNames.size(); label_i++) {
+                                if (cur_feature.get(j).intValue() == k) {
+                                    Arrays.fill(feature_value_arr, 1.0);
+                                    feature_value_arr[label_i] = Math.exp(1.0);
+                                } else
+                                    Arrays.fill(feature_value_arr, 1.0);
+                                ptl = LogTableFactor.makeFromValues(new Variable[]{allVars[j]}, feature_value_arr);
+                                factorList.add(ptl);
+                                featureType.add((m_tokenNames.size() * m_labelNames.size()) * (type / 2) +
+                                        m_labelNames.size() * k + label_i);
                             }
-                            else
-                                Arrays.fill(feature_value_arr, 1.0);
-                            ptl = LogTableFactor.makeFromValues(new Variable[]{allVars[j]}, feature_value_arr);
-                            factorList.add(ptl);
-                            featureType.add((m_tokenNames.size() * m_labelNames.size()) * (type / 2) +
-                                    m_labelNames.size() * k + label_i);
                         }
                     }
                 } else { // is digit: type=1,3,5,7,9
-                    for(int label_i = 0; label_i < m_labelNames.size(); label_i++) {
+                    if(mode.equals("train")){
+                        int cur_label = label_vec[j];
                         Arrays.fill(feature_value_arr, 1.0);
-                        feature_value_arr[label_i] = Math.exp(cur_feature.get(j));
+                        feature_value_arr[cur_label] = Math.exp(cur_feature.get(j));
                         ptl = LogTableFactor.makeFromValues(new Variable[]{allVars[j]}, feature_value_arr);
                         factorList.add(ptl);
                         featureType.add((m_tokenNames.size() * m_labelNames.size()) * 5 +
-                                m_labelNames.size() * (type / 2) + label_i);
+                                m_labelNames.size() * (type / 2) + cur_label);
+                    } else {
+                        for (int label_i = 0; label_i < m_labelNames.size(); label_i++) {
+                            Arrays.fill(feature_value_arr, 1.0);
+                            feature_value_arr[label_i] = Math.exp(cur_feature.get(j));
+                            ptl = LogTableFactor.makeFromValues(new Variable[]{allVars[j]}, feature_value_arr);
+                            factorList.add(ptl);
+                            featureType.add((m_tokenNames.size() * m_labelNames.size()) * 5 +
+                                    m_labelNames.size() * (type / 2) + label_i);
+                        }
                     }
                 }
             }
         }
 
         //step 3: add edge features
-        if(m_mask == null || !m_mask.containsKey(10) || !m_mask.get(10)) {
-            int node_feature_size = (m_tokenNames.size() * m_labelNames.size()) * 5 // This is incorrect! As we might mask out some node features!!!!
-                    + m_labelNames.size() * 5;
-            //the size is used to index edge feature such that the index will not overlap for factor graph, we take the largest space for node feature index
-
+        int node_feature_size = (m_tokenNames.size() * m_labelNames.size()) * 5 // This is incorrect! As we might mask out some node features!!!!
+                + m_labelNames.size() * 5;
+        //the size is used to index edge feature such that the index will not overlap for factor graph, we take the largest space for node feature index
+        if(m_mask.containsKey(10)) {
             for (int j = 0; j < varNodeSize; j++) {
 //                    for (int i = 0; i < m_labelNames.size(); i++) {
 //                        for (int k = 0; k < m_labelNames.size(); k++) {
@@ -243,7 +263,6 @@ public class SeqAnalyzer {
 //                            featureType.add(node_feature_size + i * m_labelNames.size() + k);
 //                        }
 //                    }
-
                 if(mode.equals("train")) {//train
                     int curIdx_1, curIdx_2;
                     if(j == 0){
@@ -288,6 +307,39 @@ public class SeqAnalyzer {
                                         + i * m_labelNames.size() + k);
                             }
                         }
+                    }
+                }
+            }
+        }
+
+        //step 3: add position features
+        int cur_feature_size = node_feature_size + 10 + m_labelNames.size()
+                + m_labelNames.size() * m_labelNames.size();
+        position_features = constructPositionFeature(seq.getTokens());
+        ArrayList<Integer> pos_feature;
+        for(int j = 0; j < varNodeSize; j++) {// for each node/variable
+            for (Integer type : position_features.keySet()) {// for each feature type
+                //skip feature type with mask
+                if(!m_mask.containsKey(type))//11-22
+                    continue;
+
+                pos_feature = position_features.get(type);
+
+                if (mode.equals("train")) {
+                    int cur_label = label_vec[j];
+                    Arrays.fill(feature_value_arr, 1.0);
+                    feature_value_arr[cur_label] = Math.exp(pos_feature.get(j));
+                    ptl = LogTableFactor.makeFromValues(new Variable[]{allVars[j]}, feature_value_arr);
+                    factorList.add(ptl);
+                    featureType.add(cur_feature_size + 10 + m_labelNames.size() * (type-11) + cur_label);
+
+                } else {
+                    for(int label_i = 0; label_i < m_labelNames.size(); label_i++) {
+                        Arrays.fill(feature_value_arr, 1.0);
+                        feature_value_arr[label_i] = Math.exp(pos_feature.get(j));
+                        ptl = LogTableFactor.makeFromValues(new Variable[]{allVars[j]}, feature_value_arr);
+                        factorList.add(ptl);
+                        featureType.add(cur_feature_size + 10 + m_labelNames.size() * (type-11) + label_i);
                     }
                 }
             }
@@ -417,6 +469,130 @@ public class SeqAnalyzer {
         node_features.put(8,x_t_next_2);
 
         return node_features;
+    }
+
+    // build the node features
+    public HashMap<Integer, ArrayList<Integer>> constructPositionFeature(int[] tokens){
+
+        int num_part = 4;
+        int[] position_idxs = new int[tokens.length];
+        for(int i = 0; i < tokens.length; i++){
+            position_idxs[i] = i / num_part;
+        }
+
+        HashMap<Integer, ArrayList<Integer>> position_features = new HashMap<>();
+
+        ArrayList<Integer> x_t_part0 = new ArrayList<>();
+        ArrayList<Integer> x_t_part1 = new ArrayList<>();
+        ArrayList<Integer> x_t_part2 = new ArrayList<>();
+        ArrayList<Integer> x_t_part3 = new ArrayList<>();
+
+        ArrayList<Integer> x_t_pre_1_part0 = new ArrayList<>();
+        ArrayList<Integer> x_t_pre_1_part1 = new ArrayList<>();
+        ArrayList<Integer> x_t_pre_1_part2 = new ArrayList<>();
+        ArrayList<Integer> x_t_pre_1_part3 = new ArrayList<>();
+
+        ArrayList<Integer> x_t_next_1_part0 = new ArrayList<>();
+        ArrayList<Integer> x_t_next_1_part1 = new ArrayList<>();
+        ArrayList<Integer> x_t_next_1_part2 = new ArrayList<>();
+        ArrayList<Integer> x_t_next_1_part3 = new ArrayList<>();
+
+        int curIdx;
+        String curToken;
+        for(int i = 0;i < tokens.length; i++){
+            if(position_idxs[i] == 0)
+                x_t_part0.add(1);
+            else
+                x_t_part0.add(0);
+
+            if(position_idxs[i] == 1)
+                x_t_part1.add(1);
+            else
+                x_t_part1.add(0);
+
+            if(position_idxs[i] == 2)
+                x_t_part2.add(1);
+            else
+                x_t_part2.add(0);
+
+            if(position_idxs[i] == 3)
+                x_t_part3.add(1);
+            else
+                x_t_part3.add(0);
+
+            //x_t-1
+            if(i == 0) {
+                x_t_pre_1_part0.add(1);
+                x_t_pre_1_part1.add(0);
+                x_t_pre_1_part2.add(0);
+                x_t_pre_1_part3.add(0);
+            } else {
+                if(position_idxs[i-1] == 0)
+                    x_t_pre_1_part0.add(1);
+                else
+                    x_t_pre_1_part0.add(0);
+
+                if(position_idxs[i-1] == 1)
+                    x_t_pre_1_part1.add(1);
+                else
+                    x_t_pre_1_part1.add(0);
+
+                if(position_idxs[i-1] == 2)
+                    x_t_pre_1_part2.add(1);
+                else
+                    x_t_pre_1_part2.add(0);
+
+                if(position_idxs[i-1] == 3)
+                    x_t_pre_1_part3.add(1);
+                else
+                    x_t_pre_1_part3.add(0);
+            }
+
+            //x_t+1
+            if(i == tokens.length-1) {
+                x_t_next_1_part0.add(0);
+                x_t_next_1_part1.add(0);
+                x_t_next_1_part2.add(0);
+                x_t_next_1_part3.add(1);
+            } else {
+                if(position_idxs[i+1] == 0)
+                    x_t_next_1_part0.add(1);
+                else
+                    x_t_next_1_part0.add(0);
+
+                if(position_idxs[i+1] == 1)
+                    x_t_next_1_part1.add(1);
+                else
+                    x_t_next_1_part1.add(0);
+
+                if(position_idxs[i+1] == 2)
+                    x_t_next_1_part2.add(1);
+                else
+                    x_t_next_1_part2.add(0);
+
+                if(position_idxs[i+1] == 3)
+                    x_t_next_1_part3.add(1);
+                else
+                    x_t_next_1_part3.add(0);
+            }
+        }
+
+        position_features.put(11,x_t_part0);
+        position_features.put(12, x_t_part1);
+        position_features.put(13, x_t_part2);
+        position_features.put(14, x_t_part3);
+
+        position_features.put(15, x_t_pre_1_part0);
+        position_features.put(16, x_t_pre_1_part1);
+        position_features.put(17, x_t_pre_1_part2);
+        position_features.put(18, x_t_pre_1_part3);
+
+        position_features.put(19, x_t_next_1_part0);
+        position_features.put(20, x_t_next_1_part1);
+        position_features.put(21, x_t_next_1_part2);
+        position_features.put(22, x_t_next_1_part3);
+
+        return position_features;
     }
 
     // This is the first-order edge feature enumerating all possible label transitions.
