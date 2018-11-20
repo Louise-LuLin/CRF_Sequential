@@ -133,7 +133,7 @@ public class CRF {
 
             // Train
             long start = System.currentTimeMillis();
-            ArrayList<ArrayList<Integer>> trainPrediction = m_graphLearner.doTraining(1);
+            ArrayList<ArrayList<Integer>> trainPrediction = m_graphLearner.doTraining(30);
             double acc_cur = calcAcc(train_label, trainPrediction)[0];
             System.out.format("cur train acc: %f\n", acc_cur);
 
