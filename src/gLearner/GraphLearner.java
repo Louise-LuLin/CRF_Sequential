@@ -376,16 +376,6 @@ public class GraphLearner implements Maximizable.ByGradient{
             testPrediction.add(doTesting(graph));
         }
 
-
-//        try {
-//            Map<Integer, Double> weights = getWeights();
-//            for(Integer fea : weights.keySet())
-//                m_writer.write(fea.toString() + " : " + weights.get(fea).toString() + " ");
-//            m_writer.write("\t" + likelihood + "\n");
-//            m_writer.close();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
         return testPrediction;
     }
 
@@ -450,8 +440,8 @@ public class GraphLearner implements Maximizable.ByGradient{
                     labelID = it.indexOfCurrentAssn();
                 }
             }
+            pred.add(labelID);
         }
-        pred.add(labelID);
 
         return pred;
     }

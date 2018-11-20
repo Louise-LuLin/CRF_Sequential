@@ -150,7 +150,7 @@ public class SeqAnalyzer {
                 if(++lineNo > maxNum)
                     break;
             }
-
+            getLabelIndex("START");
             System.out.format("[Info]Label size: %d\n", m_labelNames.size());
 
         } catch (Exception e){
@@ -232,7 +232,7 @@ public class SeqAnalyzer {
                     + m_labelNames.size() * 5;
             //the size is used to index edge feature such that the index will not overlap for factor graph, we take the largest space for node feature index
 
-            for (int j = 0; j < varNodeSize - 1; j++) {
+            for (int j = 0; j < varNodeSize; j++) {
 //                    for (int i = 0; i < m_labelNames.size(); i++) {
 //                        for (int k = 0; k < m_labelNames.size(); k++) {
 //                            trans_feature_arr = label_transition(i, k);
@@ -242,7 +242,52 @@ public class SeqAnalyzer {
 //                            featureType.add(node_feature_size + i * m_labelNames.size() + k);
 //                        }
 //                    }
-
+                if(mode.equals("train")) {//train
+                    int curIdx_1, curIdx_2;
+                    if(j == 0){
+                        curIdx_1 = getLabelIndex("START");
+                        curIdx_2 = label_vec[j];
+                        trans_feature_arr = new double[m_labelNames.size()];
+                        Arrays.fill(trans_feature_arr, 1.0);
+                        trans_feature_arr[curIdx_2] = Math.exp(1.0);
+                        ptl = LogTableFactor.makeFromValues(
+                                new Variable[]{allVars[j]}, trans_feature_arr);
+                        factorList.add(ptl);
+                        featureType.add(node_feature_size + 10 + curIdx_2);
+                    } else {
+                        curIdx_1 = label_vec[j - 1];
+                        curIdx_2 = label_vec[j];
+                        trans_feature_arr = label_transition(curIdx_1, curIdx_2);
+                        ptl = LogTableFactor.makeFromValues(
+                                new Variable[]{allVars[j-1], allVars[j]}, trans_feature_arr);
+                        factorList.add(ptl);
+                        featureType.add(node_feature_size + 10 + m_labelNames.size()
+                                + curIdx_1 * m_labelNames.size() + curIdx_2);
+                    }
+                }else{//test
+                    if(j == 0){
+                        for (int i = 0; i < m_labelNames.size(); i++) {
+                            trans_feature_arr = new double[m_labelNames.size()];
+                            Arrays.fill(trans_feature_arr, 1.0);
+                            trans_feature_arr[i] = Math.exp(1.0);
+                            ptl = LogTableFactor.makeFromValues(
+                                    new Variable[]{allVars[j]}, trans_feature_arr);
+                            factorList.add(ptl);
+                            featureType.add(node_feature_size + 10 + i);
+                        }
+                    } else {
+                        for (int i = 0; i < m_labelNames.size(); i++) {
+                            for (int k = 0; k < m_labelNames.size(); k++) {
+                                trans_feature_arr = label_transition(i, k);
+                                ptl = LogTableFactor.makeFromValues(
+                                        new Variable[]{allVars[j-1], allVars[j]}, trans_feature_arr);
+                                factorList.add(ptl);
+                                featureType.add(node_feature_size + 10 + m_labelNames.size()
+                                        + i * m_labelNames.size() + k);
+                            }
+                        }
+                    }
+                }
             }
         }
 
