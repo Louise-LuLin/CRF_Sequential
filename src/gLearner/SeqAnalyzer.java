@@ -152,7 +152,7 @@ public class SeqAnalyzer {
     }
 
     //To create the training sequence
-    public ArrayList<String4Learning> getStr4Learning(ArrayList<Sequence> seqList, String mode){
+    public ArrayList<String4Learning> getStr4Learning(){
         System.out.format("[Info]Label size: %d, token size: %d\n", m_labelNames.size(), m_tokenNames.size());        
 
         // Each string is stored as an object specifying features as table factors.
@@ -165,7 +165,7 @@ public class SeqAnalyzer {
 
         // For each training sample, construct a factor graph, and a list of table factors to specify edge
         // and node features.
-        for(Sequence seq:seqList){
+        for(Sequence seq:m_seqList){
             //step 1: construct the graph
             int varNodeSize = seq.getLength();
             int[] label_vec = seq.getLabels();
@@ -240,27 +240,6 @@ public class SeqAnalyzer {
 //                        }
 //                    }
 
-                    if(mode.equals("train")) {//train
-                        int curIdx_1 = label_vec[j];
-                        int curIdx_2 = label_vec[j + 1];
-                        trans_feature_arr = label_transition(curIdx_1, curIdx_2);
-
-                        ptl = LogTableFactor.makeFromValues(
-                                new Variable[]{allVars[j], allVars[j + 1]}, trans_feature_arr);
-
-                        factorList.add(ptl);
-                        featureType.add(node_feature_size + 10 + curIdx_1 * m_labelNames.size() + curIdx_2);
-                    }else{//test
-                        for (int i = 0; i < m_labelNames.size(); i++) {
-                            for (int k = 0; k < m_labelNames.size(); k++) {
-                                trans_feature_arr = label_transition(i, k);
-                                ptl = LogTableFactor.makeFromValues(
-                                        new Variable[]{allVars[j], allVars[j + 1]}, trans_feature_arr);
-                                factorList.add(ptl);
-                                featureType.add(node_feature_size + 10 + i * m_labelNames.size() + k);
-                            }
-                        }
-                    }
                 }
             }
 
