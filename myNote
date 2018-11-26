@@ -1,0 +1,1 @@
+nohup ./run -prefix ./data -source sod -samplesize 100 -mask 0,10,11,12,13,14,15,16,17,18,19,20,21,22 -crossV 5 > 100sample_0_10_allpos.ouput 2>&1 &
