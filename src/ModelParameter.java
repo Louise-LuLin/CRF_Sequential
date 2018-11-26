@@ -8,7 +8,7 @@ public class ModelParameter {
     public int m_samplesize = 100;
     public String m_prefix = "./data";
     public String m_source = "sod";
-    public ArrayList<Integer> m_mask = null;
+    public ArrayList<Integer> m_mask = new ArrayList<>();
     public int m_iterMax = 30;
 
     public ModelParameter(String argv[]){
@@ -32,7 +32,6 @@ public class ModelParameter {
             else if(argv[i-1].equals("-iter"))
                 m_iterMax = Integer.valueOf(argv[i]);
             else if(argv[i-1].equals("-mask")){
-                m_mask = new ArrayList<>();
                 String[] types = argv[i].split(",");
                 for(String type : types)
                     m_mask.add(Integer.valueOf(type));
