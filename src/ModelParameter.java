@@ -9,6 +9,7 @@ public class ModelParameter {
     public String m_prefix = "./data";
     public String m_source = "sod";
     public ArrayList<Integer> m_mask = null;
+    public int m_iterMax = 30;
 
     public ModelParameter(String argv[]){
 
@@ -28,6 +29,8 @@ public class ModelParameter {
                 m_crossV = Integer.valueOf(argv[i]);
             else if(argv[i-1].equals("-samplesize"))
                 m_samplesize = Integer.valueOf(argv[i]);
+            else if(argv[i-1].equals("-iter"))
+                m_iterMax = Integer.valueOf(argv[i]);
             else if(argv[i-1].equals("-mask")){
                 m_mask = new ArrayList<>();
                 String[] types = argv[i].split(",");

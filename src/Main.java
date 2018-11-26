@@ -8,7 +8,6 @@ public class Main {
     public static void main(String args[]){
         ModelParameter para = new ModelParameter(args);
         /***** experiment setting *****/
-        int crossV = 2;
 
         /***** data setting *****/
         String strPath = String.format("%s/%s/%s_string.txt", para.m_prefix, para.m_source, para.m_source);
@@ -38,7 +37,7 @@ public class Main {
         seqAnalyzer.setMask(featureMasks);
 
         CRF crfModel = new CRF(seqAnalyzer);
-        crfModel.crossValidation(para.m_crossV, String.format("%s/%s", para.m_prefix, para.m_source));
+        crfModel.crossValidation(para.m_crossV, String.format("%s/%s", para.m_prefix, para.m_source), para.m_iterMax);
     }
 
 }

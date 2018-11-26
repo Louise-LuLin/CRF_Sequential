@@ -453,6 +453,7 @@ public class GraphLearner implements Maximizable.ByGradient{
 //            }else{
 //                copy.exponentiate(0);
 //            }
+            copy.exponentiate(1.0);
             clique = copy.varSet(); // to deal with factors defined over the same clique
             if( factorIndex.containsKey(clique) ){
                 feaID = factorIndex.get(clique);

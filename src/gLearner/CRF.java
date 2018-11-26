@@ -97,7 +97,7 @@ public class CRF {
         return accs;
     }
 
-    public void crossValidation(int k, String prefix){
+    public void crossValidation(int k, String prefix, int maxIter){
     	
 
         double[][] acc = new double[k][3];
@@ -137,7 +137,7 @@ public class CRF {
 
             // Train
             long start = System.currentTimeMillis();
-            ArrayList<ArrayList<Integer>> trainPrediction = m_graphLearner.doTraining(30);
+            ArrayList<ArrayList<Integer>> trainPrediction = m_graphLearner.doTraining(maxIter);
             double acc_cur = calcAcc(train_label, trainPrediction)[0];
             System.out.format("cur train acc: %f\n", acc_cur);
 
@@ -153,8 +153,8 @@ public class CRF {
                 testGraph = m_graphLearner.buildFactorGraphs_test(m_seq.getStr4Learning(seq, "test", weights));
                 pred_tmp = m_graphLearner.doTesting(testGraph);
                 testPrediction.add(pred_tmp);
-//                System.out.format("[debug]-- test sample %d predicted label: %d, %d, %d, %d, %d\n", j++,
-//                        pred_tmp.get(0), pred_tmp.get(1), pred_tmp.get(2), pred_tmp.get(3), pred_tmp.get(4));
+                System.out.format("[debug]-- test sample %d predicted label: %d, %d, %d, %d, %d\n", j++,
+                        pred_tmp.get(0), pred_tmp.get(1), pred_tmp.get(2), pred_tmp.get(3), pred_tmp.get(4));
             }
             acc[i] = calcAcc(test_label, testPrediction);
 
