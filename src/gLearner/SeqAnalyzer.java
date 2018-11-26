@@ -202,15 +202,19 @@ public class SeqAnalyzer {
 
                 if(mode.equals("train")){
                     cur_label = label_vec[j];
-                    feature_value_arr[cur_label] = Math.exp(1.0);
-                    ptl = LogTableFactor.makeFromValues(new Variable[]{allVars[j]}, feature_value_arr);
-                    factorList.add(ptl);
-                    if(type % 2 == 0)// x_t/t-1...: type=0,2,4,6,8
+                    if(type % 2 == 0) {// x_t/t-1...: type=0,2,4,6,8
+                        feature_value_arr[cur_label] = Math.exp(1.0);
+                        ptl = LogTableFactor.makeFromValues(new Variable[]{allVars[j]}, feature_value_arr);
+                        factorList.add(ptl);
                         featureType.add((m_tokenNames.size() * m_labelNames.size()) * (type / 2) +
-                            m_labelNames.size() * cur_token + cur_label);
-                    else // is digit: type=1,3,5,7,9
+                                m_labelNames.size() * cur_token + cur_label);
+                    } else if (cur_token == 1) {// is digit: type=1,3,5,7,9
+                        feature_value_arr[cur_label] = cur_token;
+                        ptl = LogTableFactor.makeFromValues(new Variable[]{allVars[j]}, feature_value_arr);
+                        factorList.add(ptl);
                         featureType.add((m_tokenNames.size() * m_labelNames.size()) * 5 +
-                            m_labelNames.size() * 2 * (type / 2) + 2 * cur_token + cur_label);
+                                m_labelNames.size() * (type / 2) + cur_label);
+                    }
                 } else {//test
                     for(int label_i = 0; label_i < m_labelNames.size(); label_i++) {
                         cur_label = label_i;
@@ -219,7 +223,7 @@ public class SeqAnalyzer {
                                 m_labelNames.size() * cur_token + cur_label;
                         else
                             feature_idx = (m_tokenNames.size() * m_labelNames.size()) * 5 +
-                                    m_labelNames.size() * 2 * (type / 2) + 2 * cur_token + cur_label;
+                                    m_labelNames.size() * (type / 2) + cur_label;
                         if(weights.containsKey(feature_idx))
                             feature_value_arr[cur_label] = Math.exp(weights.get(feature_idx));
                     }
@@ -231,13 +235,35 @@ public class SeqAnalyzer {
 
         //step 3: add edge features
         int node_feature_size = (m_tokenNames.size() * m_labelNames.size()) * 5 // This is incorrect! As we might mask out some node features!!!!
-                + m_labelNames.size() * 2 * 5;
+                + m_labelNames.size() * 5;
         int curIdx_1, curIdx_2;
         double[] start_feature_arr = new double[m_labelNames.size()];
         double[] trans_feature_arr = new double[m_labelNames.size() * m_labelNames.size()];
         //the size is used to index edge feature such that the index will not overlap for factor graph, we take the largest space for node feature index
         if(!m_mask.containsKey(10)) {
-            if(mode.equals("test")){
+            if(mode.equals("train")){
+                for(int j = 0; j < varNodeSize; j++) {
+                    if(j == 0){
+                        curIdx_1 = getLabelIndex("START");
+                        curIdx_2 = label_vec[j];
+                        Arrays.fill(start_feature_arr, 1.0);
+                        start_feature_arr[curIdx_2] = Math.exp(1.0);
+                        ptl = LogTableFactor.makeFromValues(
+                                new Variable[]{allVars[j]}, start_feature_arr);
+                        factorList.add(ptl);
+                        featureType.add(node_feature_size + 10 + curIdx_2);
+                    } else {
+                        curIdx_1 = label_vec[j - 1];
+                        curIdx_2 = label_vec[j];
+                        trans_feature_arr = label_transition(curIdx_1, curIdx_2);
+                        ptl = LogTableFactor.makeFromValues(
+                                new Variable[]{allVars[j-1], allVars[j]}, trans_feature_arr);
+                        factorList.add(ptl);
+                        featureType.add(node_feature_size + 10 + m_labelNames.size()
+                                + curIdx_1 * m_labelNames.size() + curIdx_2);
+                    }
+                }
+            } else {
                 Arrays.fill(start_feature_arr, 1.0);
                 Arrays.fill(trans_feature_arr, 1.0);
                 for (int i = 0; i < m_labelNames.size(); i++) {
@@ -263,28 +289,6 @@ public class SeqAnalyzer {
                     }
                     factorList.add(ptl);
                 }
-            } else {
-                for(int j = 0; j < varNodeSize; j++) {
-                    if(j == 0){
-                        curIdx_1 = getLabelIndex("START");
-                        curIdx_2 = label_vec[j];
-                        Arrays.fill(start_feature_arr, 1.0);
-                        start_feature_arr[curIdx_2] = Math.exp(1.0);
-                        ptl = LogTableFactor.makeFromValues(
-                                new Variable[]{allVars[j]}, start_feature_arr);
-                        factorList.add(ptl);
-                        featureType.add(node_feature_size + 10 + curIdx_2);
-                    } else {
-                        curIdx_1 = label_vec[j - 1];
-                        curIdx_2 = label_vec[j];
-                        trans_feature_arr = label_transition(curIdx_1, curIdx_2);
-                        ptl = LogTableFactor.makeFromValues(
-                                new Variable[]{allVars[j-1], allVars[j]}, trans_feature_arr);
-                        factorList.add(ptl);
-                        featureType.add(node_feature_size + 10 + m_labelNames.size()
-                                + curIdx_1 * m_labelNames.size() + curIdx_2);
-                    }
-                }
             }
         }
 
@@ -300,31 +304,24 @@ public class SeqAnalyzer {
                     continue;
 
                 pos_feature = position_features.get(type);
+                Arrays.fill(feature_value_arr, 1.0);
+                cur_token = pos_feature.get(j);
 
                 if (mode.equals("train")) {
-                    cur_token = pos_feature.get(j);
-                    cur_label = label_vec[j];
-                    Arrays.fill(feature_value_arr, 1.0);
-                    feature_value_arr[cur_label] = Math.exp(1.0);
-                    ptl = LogTableFactor.makeFromValues(new Variable[]{allVars[j]}, feature_value_arr);
-                    factorList.add(ptl);
-                    featureType.add(cur_feature_size + 10 + m_labelNames.size() * 2 * (type-11)
-                             + 2 * cur_token + cur_label);
+                    if (cur_token == 1) {
+                        cur_label = label_vec[j];
+                        feature_value_arr[cur_label] = cur_token;
+                        ptl = LogTableFactor.makeFromValues(new Variable[]{allVars[j]}, feature_value_arr);
+                        factorList.add(ptl);
+                        featureType.add(cur_feature_size + 10 + m_labelNames.size() * (type - 11)
+                                + cur_label);
+                    }
 
                 } else {
-//                    for(int label_i = 0; label_i < m_labelNames.size(); label_i++) {
-//                        Arrays.fill(feature_value_arr, 1.0);
-//                        feature_value_arr[label_i] = Math.exp(pos_feature.get(j));
-//                        ptl = LogTableFactor.makeFromValues(new Variable[]{allVars[j]}, feature_value_arr);
-//                        factorList.add(ptl);
-//                        featureType.add(cur_feature_size + 10 + m_labelNames.size() * (type-11) + label_i);
-//                    }
-                    Arrays.fill(feature_value_arr, 1.0);
-                    cur_token = pos_feature.get(j);
-                    for(int label_i = 0; label_i < m_labelNames.size(); label_i++) {
+                   for(int label_i = 0; label_i < m_labelNames.size(); label_i++) {
                         cur_label = label_i;
-                        feature_idx = cur_feature_size + 10 + m_labelNames.size() * 2 * (type-11)
-                                + 2 * cur_token + cur_label;
+                        feature_idx = cur_feature_size + 10 + m_labelNames.size() * (type-11)
+                                + cur_label;
                         if(weights.containsKey(feature_idx))
                             feature_value_arr[cur_label] = Math.exp(weights.get(feature_idx));
                     }
