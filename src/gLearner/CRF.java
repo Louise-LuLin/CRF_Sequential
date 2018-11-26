@@ -6,7 +6,9 @@ import gLearner.SeqAnalyzer;
 import gLearner.String4Learning;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Random;
+import java.util.TreeMap;
 
 /**
  *  This is a class putting node and edge features into table factors.
@@ -109,11 +111,13 @@ public class CRF {
         
         //use this loop to iterate all the folders, set train and test
         for(int i = 0; i < k; i++){
-        	ArrayList<int[]> train_label = new ArrayList<int[]>();
-            ArrayList<String4Learning> training_data = new ArrayList<String4Learning>();
+        	ArrayList<int[]> train_label = new ArrayList<>();
+            ArrayList<String4Learning> training_data = new ArrayList<>();
 
-        	ArrayList<int[]> test_label = new ArrayList<int[]>();
+        	ArrayList<int[]> test_label = new ArrayList<>();
             ArrayList<Sequence> testing_seq = new ArrayList<>();
+
+            Map<Integer, Double> weights = new TreeMap<>();
 
             for(int j = 0; j < masks.length; j++) {
                 if (masks[j] == i) {
@@ -121,7 +125,7 @@ public class CRF {
                     testing_seq.add(m_seq.getSequences().get(j));
                 } else {
                     train_label.add(m_seq.getLabels().get(j));
-                    training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(j), "train"));
+                    training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(j), "train", weights));
                 }
             }
 
@@ -138,18 +142,19 @@ public class CRF {
             System.out.format("cur train acc: %f\n", acc_cur);
 
             m_graphLearner.SaveWeights(String.format("%s/weights.txt", prefix));
+            weights = m_graphLearner.getWeights();
 
             // Apply the trained model to the test set.
             ArrayList<ArrayList<Integer>> testPrediction = new ArrayList<>();
             ArrayList<Integer> pred_tmp;
+            FactorGraph testGraph;
             int j=0;
             for(Sequence seq : testing_seq) {
-                System.out.format("-- test sample %d\n", j++);
-                FactorGraph testGraph = m_graphLearner.buildFactorGraphs_test(m_seq.getStr4Learning(seq, "test"));
+                testGraph = m_graphLearner.buildFactorGraphs_test(m_seq.getStr4Learning(seq, "test", weights));
                 pred_tmp = m_graphLearner.doTesting(testGraph);
                 testPrediction.add(pred_tmp);
-                System.out.format("[debug]predicted lable: %d, %d, %d, %d, %d\n",
-                        pred_tmp.get(0), pred_tmp.get(1), pred_tmp.get(2), pred_tmp.get(3), pred_tmp.get(4));
+//                System.out.format("[debug]-- test sample %d predicted label: %d, %d, %d, %d, %d\n", j++,
+//                        pred_tmp.get(0), pred_tmp.get(1), pred_tmp.get(2), pred_tmp.get(3), pred_tmp.get(4));
             }
             acc[i] = calcAcc(test_label, testPrediction);
 

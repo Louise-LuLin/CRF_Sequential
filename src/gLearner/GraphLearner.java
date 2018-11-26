@@ -13,7 +13,6 @@ import java.util.*;
 public class GraphLearner implements Maximizable.ByGradient{
 
     private double[] m_weights; //weights for each feature, to be optimized
-    private Map<Integer, Boolean> m_mask; //turn on/off the features to learn
     private double[] m_constraints; //observed counts for each feature (over cliques) in the training sample set (x, y)
     private double[] m_exptectations; //expected counts for each feature (over cliques) based on the training sample set (X)
 
@@ -45,7 +44,6 @@ public class GraphLearner implements Maximizable.ByGradient{
 
         int featureDim = setTrainingSet(traininglist);
         m_weights = new double[featureDim];
-        m_mask = null;
         m_constraints = new double[featureDim];
         m_exptectations = new double[featureDim];
 
@@ -192,11 +190,6 @@ public class GraphLearner implements Maximizable.ByGradient{
 
             m_infer.computeMarginals(graph);//begin to collect the expectations
             for(int index=0; index<sample.factorList.size(); index++) {
-                if ( m_mask != null && m_mask.containsKey(sample.featureType.get(index))
-                        && !m_mask.get(sample.featureType.get(index)) ){
-                    continue;
-                }
-
                 factor = sample.factorList.get(index);
                 ptl = m_infer.lookupMarginal(factor.varSet());
                 feaID = m_featureMap.get(sample.featureType.get(index)).intValue();
@@ -254,10 +247,6 @@ public class GraphLearner implements Maximizable.ByGradient{
             m_trainAssignment.add(assign);
 
             for(int i=0; i<sample.factorList.size(); i++){
-                if ( m_mask != null && m_mask.containsKey(sample.featureType.get(i))
-                        && !m_mask.get(sample.featureType.get(i)) ){
-                    continue;
-                }
                 factor = sample.factorList.get(i);
                 feaID = m_featureMap.get(sample.featureType.get(i)).intValue();
                 feaValue = factor.logValue(assign);
@@ -299,10 +288,6 @@ public class GraphLearner implements Maximizable.ByGradient{
             factorList.clear();
 
             for(index=0; index<tmpString.factorList.size(); index++){
-                if ( m_mask != null && m_mask.containsKey(tmpString.featureType.get(index))
-                        && !m_mask.get(tmpString.featureType.get(index)) ){
-                    continue;
-                }
                 factor = tmpString.factorList.get(index);
                 Factor copy = factor.duplicate();
                 feaID = m_featureMap.get(tmpString.featureType.get(index)); // feature ID corresponding to its weight
@@ -462,12 +447,12 @@ public class GraphLearner implements Maximizable.ByGradient{
         for(index=0; index<tmpString.factorList.size(); index++){
             factor = tmpString.factorList.get(index);
             Factor copy = factor.duplicate();
-            if(m_featureMap.containsKey(tmpString.featureType.get(index))) {
-                feaID = m_featureMap.get(tmpString.featureType.get(index)); // feature ID corresponding to its weight
-                copy.exponentiate(m_weights[feaID]);  // potential = feature * weight
-            }else{
-                copy.exponentiate(0);
-            }
+//            if(m_featureMap.containsKey(tmpString.featureType.get(index))) {
+//                feaID = m_featureMap.get(tmpString.featureType.get(index)); // feature ID corresponding to its weight
+//                copy.exponentiate(m_weights[feaID]);  // potential = feature * weight
+//            }else{
+//                copy.exponentiate(0);
+//            }
             clique = copy.varSet(); // to deal with factors defined over the same clique
             if( factorIndex.containsKey(clique) ){
                 feaID = factorIndex.get(clique);
