@@ -153,8 +153,8 @@ public class CRF {
                 testGraph = m_graphLearner.buildFactorGraphs_test(m_seq.getStr4Learning(seq, "test", weights));
                 pred_tmp = m_graphLearner.doTesting(testGraph);
                 testPrediction.add(pred_tmp);
-                System.out.format("[debug]-- test sample %d predicted label: %d, %d, %d, %d, %d\n", j++,
-                        pred_tmp.get(0), pred_tmp.get(1), pred_tmp.get(2), pred_tmp.get(3), pred_tmp.get(4));
+//                System.out.format("[debug]-- test sample %d predicted label: %d, %d, %d, %d, %d\n", j++,
+//                        pred_tmp.get(0), pred_tmp.get(1), pred_tmp.get(2), pred_tmp.get(3), pred_tmp.get(4));
             }
             acc[i] = calcAcc(test_label, testPrediction);
 
