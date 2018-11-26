@@ -141,7 +141,7 @@ public class CRF {
             double acc_cur = calcAcc(train_label, trainPrediction)[0];
             System.out.format("cur train acc: %f\n", acc_cur);
 
-            m_graphLearner.SaveWeights(String.format("%s/weights.txt", prefix));
+//            m_graphLearner.SaveWeights(String.format("%s/weights.txt", prefix));
             weights = m_graphLearner.getWeights();
 
             // Apply the trained model to the test set.
