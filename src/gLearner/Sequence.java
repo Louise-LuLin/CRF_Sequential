@@ -12,6 +12,8 @@ public class Sequence {
 		
 		m_tokenList = new ArrayList<Token>();
 	}
+
+	String getContent(){ return m_content; }
 	
 	void addToken(String content, int index) {
 		m_tokenList.add(new Token(content, index));

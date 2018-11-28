@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
+import java.util.concurrent.SynchronousQueue;
 
 /**
  *  This is a class putting node and edge features into table factors.
@@ -146,13 +147,43 @@ public class CRF {
 
             // Apply the trained model to the test set.
             ArrayList<ArrayList<Integer>> testPrediction = new ArrayList<>();
+            ArrayList<ArrayList<Integer>> testTmp = new ArrayList<>();
+            ArrayList<int[]> testTrue = new ArrayList<>();
             ArrayList<Integer> pred_tmp;
             FactorGraph testGraph;
             int j=0;
-            for(Sequence seq : testing_seq) {
+            for(int l = 0; l < testing_seq.size(); l++) {
+                Sequence seq = testing_seq.get(l);
                 testGraph = m_graphLearner.buildFactorGraphs_test(m_seq.getStr4Learning(seq, "test", weights));
                 pred_tmp = m_graphLearner.doTesting(testGraph);
+
                 testPrediction.add(pred_tmp);
+
+                testTmp.clear();
+                testTrue.clear();
+                testTmp.add(pred_tmp);
+                testTrue.add(test_label.get(l));
+                double[] acc_tmp = calcAcc(testTrue, testTmp);
+                if(acc_tmp[0] < 0.8) {
+                    System.out.format("===== bad =====\n");
+                    System.out.format("Token: %s\n", seq.getContent());
+                }
+                if(acc_tmp[0] > 0.95) {
+                    System.out.format("===== good =====\n");
+                    System.out.format("Token: %s\n", seq.getContent());
+                }
+                if(acc_tmp[0] < 0.8 || acc_tmp[0] > 0.95) {
+                    System.out.format("True: ");
+                    int[] labels = seq.getLabels();
+                    for(int a = 0; a < labels.length; a++)
+                        System.out.format("%s,", m_seq.getLabelNames().get(labels[a]));
+                    System.out.format("\n");
+
+                    System.out.format("Pred: ");
+                    for(int a = 0; a < pred_tmp.size(); a++)
+                        System.out.format("%s,", m_seq.getLabelNames().get(pred_tmp.get(a)));
+                    System.out.format("\n");
+                }
 //                System.out.format("[debug]-- test sample %d predicted label: %d, %d, %d, %d, %d\n", j++,
 //                        pred_tmp.get(0), pred_tmp.get(1), pred_tmp.get(2), pred_tmp.get(3), pred_tmp.get(4));
             }
