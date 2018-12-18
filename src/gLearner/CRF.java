@@ -1,14 +1,12 @@
 package gLearner;
 
-import edu.umass.cs.mallet.grmm.types.*;
+//import edu.umass.cs.mallet.grmm.types.*;
+import cc.mallet.grmm.types.FactorGraph;
 import gLearner.GraphLearner;
 import gLearner.SeqAnalyzer;
 import gLearner.String4Learning;
 
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Random;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.SynchronousQueue;
 
 /**
@@ -125,17 +123,45 @@ public class CRF {
             testing_seq.add(m_seq.getSequences().get(test_idx.get(i)));
         }
 
-        //warm up
-        // Build up a graph learner and train it using training data.
-        GraphLearner m_graphLearner = new GraphLearner(training_data);
-        ArrayList<ArrayList<Integer>> trainPrediction = m_graphLearner.doTraining(maxIter);
-        double acc_cur = calcAcc(train_label, trainPrediction)[0];
-        System.out.format("[Info]cur train acc: %f\n", acc_cur);
-        weights = m_graphLearner.getWeights();
-
         //active learning
         double[] acc;
+        GraphLearner m_graphLearner = null;
         for(int i = 0 ; i < query_k; i++){
+
+            if(i%10 == 0) {
+
+                System.out.format("==========\n[Info]Active query %d samples: train size = %d, test size = %d...\n",
+                        i, training_data.size(), testing_seq.size());
+
+                // Build up a graph learner and train it using training data.
+                m_graphLearner = new GraphLearner(training_data);
+
+                // Train
+                long start = System.currentTimeMillis();
+                ArrayList<ArrayList<Integer>> trainPrediction = m_graphLearner.doTraining(maxIter);
+                double acc_cur = calcAcc(train_label, trainPrediction)[0];
+                System.out.format("[Info]cur train acc: %f\n", acc_cur);
+
+                weights = m_graphLearner.getWeights();
+
+                // Apply the trained model to the test set.
+                ArrayList<ArrayList<Integer>> testPrediction = new ArrayList<>();
+                ArrayList<Integer> pred_tmp;
+                FactorGraph testGraph;
+                int j = 0;
+                for (int l = 0; l < testing_seq.size(); l++) {
+                    Sequence seq = testing_seq.get(l);
+                    testGraph = m_graphLearner.buildFactorGraphs_test(m_seq.getStr4Learning(seq, "test", weights));
+                    pred_tmp = m_graphLearner.doTesting(testGraph);
+
+                    testPrediction.add(pred_tmp);
+                }
+                acc = calcAcc(test_label, testPrediction);
+
+                System.out.format("[Stat]Train/test finished in %.2f seconds: acc_all = %.2f, acc_phrase = %.2f, acc_out = %.2f\n",
+                        (System.currentTimeMillis() - start) / 1000.0, acc[0], acc[1], acc[2]);
+            }
+
 
             if(tuple_k == 0){//choose a random one
                 Random r = new Random();
@@ -144,6 +170,7 @@ public class CRF {
                 training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(candidate_idx.get(random_j)), "train", weights));
                 candidate_idx.remove(random_j);
             } else if(tuple_k >= 50){//choose the one with minimum confidence
+                System.out.format("-- query %d\n", i);
                 double min = Double.MAX_VALUE;
                 int uncertain_j = 0;
                 FactorGraph tmpGraph;
@@ -161,44 +188,30 @@ public class CRF {
                 train_label.add(m_seq.getLabels().get(candidate_idx.get(uncertain_j)));
                 training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(candidate_idx.get(uncertain_j)), "train", weights));
                 candidate_idx.remove(uncertain_j);
+            } else {//choose sub sequence
+                System.out.format("-- query %d\n", i);
+                double min = Double.MAX_VALUE;
+                int uncertain_j = 0, uncertain_k=0;
+                FactorGraph tmpGraph;
+                double[] tuple_confidence;
+                for(int j = 0; j < candidate_idx.size(); j++){
+                    Sequence seq = m_seq.getSequences().get(candidate_idx.get(j));
+                    tmpGraph = m_graphLearner.buildFactorGraphs_test(m_seq.getStr4Learning(seq, "test", weights));
+                    tuple_confidence = m_graphLearner.calcTupleConfidence(tmpGraph, 1);
+                    for(int k = 0; k < tuple_confidence.length; k++){
+                        if(tuple_confidence[k] < min){
+                            min = tuple_confidence[k];
+                            uncertain_j = j;
+                            uncertain_k = k;
+                        }
+                    }
+                }
+
+                train_label.add(Arrays.copyOfRange(m_seq.getLabels().get(candidate_idx.get(uncertain_j)), uncertain_k, tuple_k));
+                training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(candidate_idx.get(uncertain_j)).getSubSeq(uncertain_k, tuple_k),
+                        "train", weights));
+                candidate_idx.remove(uncertain_j);
             }
-
-            if(i%10 != 0)
-                continue;
-
-            System.out.format("==========\n[Info]Active query %d samples: train size = %d, test size = %d...\n",
-                    i, training_data.size(), testing_seq.size());
-
-            // Build up a graph learner and train it using training data.
-            m_graphLearner = new GraphLearner(training_data);
-
-            // Train
-            long start = System.currentTimeMillis();
-            trainPrediction = m_graphLearner.doTraining(maxIter);
-            acc_cur = calcAcc(train_label, trainPrediction)[0];
-            System.out.format("[Info]cur train acc: %f\n", acc_cur);
-
-//            m_graphLearner.SaveWeights(String.format("%s/weights.txt", prefix));
-            weights = m_graphLearner.getWeights();
-
-            // Apply the trained model to the test set.
-            ArrayList<ArrayList<Integer>> testPrediction = new ArrayList<>();
-            ArrayList<ArrayList<Integer>> testTmp = new ArrayList<>();
-            ArrayList<int[]> testTrue = new ArrayList<>();
-            ArrayList<Integer> pred_tmp;
-            FactorGraph testGraph;
-            int j=0;
-            for(int l = 0; l < testing_seq.size(); l++) {
-                Sequence seq = testing_seq.get(l);
-                testGraph = m_graphLearner.buildFactorGraphs_test(m_seq.getStr4Learning(seq, "test", weights));
-                pred_tmp = m_graphLearner.doTesting(testGraph);
-
-                testPrediction.add(pred_tmp);
-            }
-            acc = calcAcc(test_label, testPrediction);
-
-            System.out.format("[Stat]Train/test finished in %.2f seconds: acc_all = %.2f, acc_phrase = %.2f, acc_out = %.2f\n",
-                    (System.currentTimeMillis()-start)/1000.0, acc[0], acc[1], acc[2]);
 
         }
 

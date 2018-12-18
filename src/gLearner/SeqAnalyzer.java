@@ -1,5 +1,9 @@
 package gLearner;
 
+import cc.mallet.grmm.types.Factor;
+import cc.mallet.grmm.types.LogTableFactor;
+import cc.mallet.grmm.types.Variable;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -8,11 +12,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
-import edu.umass.cs.mallet.base.types.Matrix;
-import edu.umass.cs.mallet.base.types.SparseMatrixn;
-import edu.umass.cs.mallet.grmm.types.Factor;
-import edu.umass.cs.mallet.grmm.types.LogTableFactor;
-import edu.umass.cs.mallet.grmm.types.Variable;
+//import edu.umass.cs.mallet.base.types.Matrix;
+//import edu.umass.cs.mallet.base.types.SparseMatrixn;
+//import edu.umass.cs.mallet.grmm.types.Factor;
+//import edu.umass.cs.mallet.grmm.types.LogTableFactor;
+//import edu.umass.cs.mallet.grmm.types.Variable;
 
 public class SeqAnalyzer {
     private String m_source;

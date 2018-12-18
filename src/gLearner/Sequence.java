@@ -13,6 +13,10 @@ public class Sequence {
 		m_tokenList = new ArrayList<Token>();
 	}
 
+	void setTokenList(ArrayList<Token> tokenlist){
+		this.m_tokenList = tokenlist;
+	}
+
 	String getContent(){ return m_content; }
 	
 	void addToken(String content, int index) {
@@ -43,7 +47,32 @@ public class Sequence {
 		
 		return tokens;
 	}
-	
+
+	int[] getLabels(int min, int max) {
+		int[] labels = new int[max-min];
+
+		for(int i=min; i<max; i++)
+			labels[i] = m_tokenList.get(i).m_label;
+
+		return labels;
+	}
+
+	int[] getTokens(int min, int max) {
+		int[] tokens = new int[max-min];
+
+		for(int i=min; i<max; i++)
+			tokens[i] = m_tokenList.get(i).m_index;
+
+		return tokens;
+	}
+
+	public Sequence getSubSeq(int min, int max){
+		String content = this.getContent().substring(min, max);
+		Sequence sub = new Sequence(content);
+		sub.setTokenList(new ArrayList<Token>(this.m_tokenList.subList(min, max)));
+		return sub;
+	}
+
 	int getLength() {
 		return m_tokenList.size();
 	}

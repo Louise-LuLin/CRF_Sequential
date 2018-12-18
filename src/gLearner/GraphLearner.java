@@ -1,12 +1,22 @@
 package gLearner;
 
+import cc.mallet.grmm.inference.Inferencer;
+import cc.mallet.grmm.inference.LoopyBP;
+import cc.mallet.grmm.types.*;
+//import cc.mallet.optimize.LimitedMemoryBFGS;
 import edu.umass.cs.mallet.base.maximize.LimitedMemoryBFGS;
 import edu.umass.cs.mallet.base.maximize.Maximizable;
 import edu.umass.cs.mallet.base.maximize.Maximizer;
-import edu.umass.cs.mallet.grmm.inference.Inferencer;
-import edu.umass.cs.mallet.grmm.inference.JunctionTreeInferencer;
-import edu.umass.cs.mallet.grmm.inference.LoopyBP;
-import edu.umass.cs.mallet.grmm.types.*;
+
+//import edu.umass.cs.mallet.base.maximize.LimitedMemoryBFGS;
+//import edu.umass.cs.mallet.base.maximize.Maximizable;
+//import edu.umass.cs.mallet.base.maximize.Maximizer;
+//import edu.umass.cs.mallet.grmm.inference.Inferencer;
+//import edu.umass.cs.mallet.grmm.inference.JunctionTreeInferencer;
+//import edu.umass.cs.mallet.grmm.inference.LoopyBP;
+//import edu.umass.cs.mallet.grmm.types.*;
+//import edu.umass.cs.mallet.grmm.types.Assignment;
+//import edu.umass.cs.mallet.grmm.types.FactorGraph;
 
 import java.io.*;
 import java.util.*;
@@ -404,7 +414,7 @@ public class GraphLearner implements Maximizable.ByGradient{
         AssignmentIterator it;
         Factor ptl;
         Variable variable;
-        int varSize, var, labelID = 0;
+        int varSize, var;
         double max;
 
 //        Inferencer m_infer = TRP.createForMaxProduct();
@@ -422,13 +432,46 @@ public class GraphLearner implements Maximizable.ByGradient{
                 //System.out.println(ptl.value(it));
                 if (ptl.value(it)>max) {
                     max = ptl.value(it);
-                    labelID = it.indexOfCurrentAssn();
                 }
             }
             confidence += max;
         }
 
         return confidence/varSize;
+    }
+
+    public double[] calcTupleConfidence(FactorGraph graph, int k){
+        AssignmentIterator it;
+        Factor ptl;
+        Variable[] variables = new Variable[k];
+        int varSize, var, i;
+        double max;
+
+//        Inferencer m_infer = TRP.createForMaxProduct();
+        Inferencer m_infer = LoopyBP.createForMaxProduct();
+
+        varSize = graph.numVariables();
+        m_infer.computeMarginals(graph);  //begin to collect the expectations
+
+        double[] tuple_confidence = new double[varSize-k+1];
+
+        for(var=0; var<varSize-k+1; var++) {
+            //retrieve the MAP configuration
+            for(i=var; i < k; i++)
+                variables[i-var] = graph.get(var);
+
+            ptl = m_infer.lookupMarginal(graph.marginalize(variables).varSet());
+            max = -Double.MAX_VALUE;
+            for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
+                //System.out.println(ptl.value(it));
+                if (ptl.value(it)>max) {
+                    max = ptl.value(it);
+                }
+            }
+            tuple_confidence[var] = max;
+        }
+
+        return tuple_confidence;
     }
 
     public ArrayList<Integer> doTesting(FactorGraph graph){
