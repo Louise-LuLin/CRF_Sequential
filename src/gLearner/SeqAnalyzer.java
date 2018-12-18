@@ -6,10 +6,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import edu.umass.cs.mallet.base.types.Matrix;
 import edu.umass.cs.mallet.base.types.SparseMatrixn;
@@ -120,7 +117,7 @@ public class SeqAnalyzer {
                 }
                 
                 m_seqList.add(seq);
-                if(m_seqList.size() > maxNum)
+                if(m_seqList.size() >= maxNum)
                     break;
             }
             System.out.format("[Info]token size: %d\n", m_tokenNames.size());
@@ -128,6 +125,70 @@ public class SeqAnalyzer {
         } catch (Exception e){
             System.err.format("[Err]File %s doesn't exist.\n", filePath);
         }
+    }
+
+    //gen train or test idex
+    public void genTrainTestIdx(String filePath, int train_k, int test_k){
+        File file = new File(String.format("%s_train_%d.txt",
+                filePath, train_k));
+        if(file.exists()) {
+            System.err.println(String.format("[err] index file %s_train_%d.txt exists.",
+                    filePath, train_k));
+            return;
+        }
+
+        ArrayList<Integer> all_idx = new ArrayList<>();
+        for (int i = 0; i < m_seqList.size(); i++){
+            all_idx.add(i);
+        }
+
+        Collections.shuffle(all_idx);
+
+        try{
+            BufferedWriter writer = new BufferedWriter(new FileWriter(new File(String.format("%s_train_%d.txt",
+                    filePath, train_k))));
+            //print indexes
+            for(int i = 0; i < train_k; i++)
+                writer.write(all_idx.get(i) + "\n");
+            writer.close();
+
+            writer = new BufferedWriter((new FileWriter(new File(String.format("%s_test_%d.txt",
+                    filePath, test_k)))));
+            for(int i = 0; i < test_k; i++)
+                writer.write(all_idx.get(i + train_k) + "\n");
+            writer.close();
+
+            int candidate_k = m_seqList.size() - train_k - test_k;
+            writer = new BufferedWriter((new FileWriter(new File(String.format("%s_candidate_%d.txt",
+                    filePath, candidate_k)))));
+            for(int i = 0; i < candidate_k; i++)
+                writer.write(all_idx.get(i + train_k + test_k) + "\n");
+            writer.close();
+
+            System.out.format("[Info]generate corpus: train_size=%d, test_size=%d, candidate_size=%d\n",
+                    train_k, test_k, candidate_k);
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+
+    public ArrayList<Integer> loadIdx(String filePath, String mode, int k){
+        ArrayList<Integer> idx_list = new ArrayList<Integer>();
+        //load test idx
+        try (BufferedReader br = new BufferedReader(new FileReader(String.format("%s_%s_%d.txt",
+                filePath, mode, k)))) {
+            String line;
+            int idx;
+            while ((line = br.readLine()) != null && line.length() > 0) {
+                idx = Integer.parseInt(line);
+                idx_list.add(idx);
+            }
+
+        } catch (Exception e){
+            System.err.format("[Err]File %s doesn't exist.\n", filePath);
+        }
+
+        return idx_list;
     }
 
     //this is a poor design of loading input files, where we have to assume the alignment by line number
@@ -148,7 +209,7 @@ public class SeqAnalyzer {
                     seq.assignLabel(tokenIdx++, getLabelIndex(s));//dynamically expand labelNames
                 }
                 
-                if(++lineNo > maxNum)
+                if(++lineNo >= maxNum)
                     break;
             }
             getLabelIndex("START");

@@ -4,6 +4,7 @@ import edu.umass.cs.mallet.base.maximize.LimitedMemoryBFGS;
 import edu.umass.cs.mallet.base.maximize.Maximizable;
 import edu.umass.cs.mallet.base.maximize.Maximizer;
 import edu.umass.cs.mallet.grmm.inference.Inferencer;
+import edu.umass.cs.mallet.grmm.inference.JunctionTreeInferencer;
 import edu.umass.cs.mallet.grmm.inference.LoopyBP;
 import edu.umass.cs.mallet.grmm.types.*;
 
@@ -40,7 +41,7 @@ public class GraphLearner implements Maximizable.ByGradient{
 
     GraphLearner(ArrayList<String4Learning> traininglist){
         m_infer = new LoopyBP(50);
-        //m_infer = new JunctionTreeInferencer();
+//        m_infer = new JunctionTreeInferencer();
 
         int featureDim = setTrainingSet(traininglist);
         m_weights = new double[featureDim];
