@@ -10,6 +10,10 @@ public class ModelParameter {
     public String m_source = "sod";
     public ArrayList<Integer> m_mask = new ArrayList<>();
     public int m_iterMax = 30;
+    public int m_train_k = 30;
+    public int m_test_k = 200;
+    public int m_query_k = 100;
+    public int m_tuple_k = 0;
 
     public ModelParameter(String argv[]){
 
@@ -31,6 +35,14 @@ public class ModelParameter {
                 m_samplesize = Integer.valueOf(argv[i]);
             else if(argv[i-1].equals("-iter"))
                 m_iterMax = Integer.valueOf(argv[i]);
+            else if(argv[i-1].equals("-traink"))
+                m_train_k = Integer.valueOf(argv[i]);
+            else if(argv[i-1].equals("-testk"))
+                m_test_k = Integer.valueOf(argv[i]);
+            else if(argv[i-1].equals("-queryk"))
+                m_query_k = Integer.valueOf(argv[i]);
+            else if(argv[i-1].equals("-tuplek"))
+                m_tuple_k = Integer.valueOf(argv[i]);
             else if(argv[i-1].equals("-mask")){
                 String[] types = argv[i].split(",");
                 for(String type : types)
