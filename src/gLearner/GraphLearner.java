@@ -399,6 +399,38 @@ public class GraphLearner implements Maximizable.ByGradient{
         }
     }
 
+    public double calcConfidence(FactorGraph graph){
+        double confidence = 0;
+        AssignmentIterator it;
+        Factor ptl;
+        Variable variable;
+        int varSize, var, labelID = 0;
+        double max;
+
+//        Inferencer m_infer = TRP.createForMaxProduct();
+        Inferencer m_infer = LoopyBP.createForMaxProduct();
+
+        varSize = graph.numVariables();
+        m_infer.computeMarginals(graph);  //begin to collect the expectations
+
+        for(var=0; var<varSize; var++) {
+            //retrieve the MAP configuration
+            variable = graph.get(var);
+            ptl = m_infer.lookupMarginal(variable);
+            max = -Double.MAX_VALUE;
+            for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
+                //System.out.println(ptl.value(it));
+                if (ptl.value(it)>max) {
+                    max = ptl.value(it);
+                    labelID = it.indexOfCurrentAssn();
+                }
+            }
+            confidence += max;
+        }
+
+        return confidence/varSize;
+    }
+
     public ArrayList<Integer> doTesting(FactorGraph graph){
 
         AssignmentIterator it;

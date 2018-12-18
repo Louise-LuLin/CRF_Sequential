@@ -125,16 +125,42 @@ public class CRF {
             testing_seq.add(m_seq.getSequences().get(test_idx.get(i)));
         }
 
+        //warm up
+        // Build up a graph learner and train it using training data.
+        GraphLearner m_graphLearner = new GraphLearner(training_data);
+        ArrayList<ArrayList<Integer>> trainPrediction = m_graphLearner.doTraining(maxIter);
+        double acc_cur = calcAcc(train_label, trainPrediction)[0];
+        System.out.format("[Info]cur train acc: %f\n", acc_cur);
+        weights = m_graphLearner.getWeights();
+
         //active learning
         double[] acc;
         for(int i = 0 ; i < query_k; i++){
 
-            if(tuple_k == 0){
+            if(tuple_k == 0){//choose a random one
                 Random r = new Random();
                 int random_j = r.nextInt(candidate_idx.size());
                 train_label.add(m_seq.getLabels().get(candidate_idx.get(random_j)));
                 training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(candidate_idx.get(random_j)), "train", weights));
                 candidate_idx.remove(random_j);
+            } else if(tuple_k >= 50){//choose the one with minimum confidence
+                double min = Double.MAX_VALUE;
+                int uncertain_j = 0;
+                FactorGraph tmpGraph;
+                double tmpConficence;
+                for(int j = 0; j < candidate_idx.size(); j++){
+                    Sequence seq = m_seq.getSequences().get(candidate_idx.get(j));
+                    tmpGraph = m_graphLearner.buildFactorGraphs_test(m_seq.getStr4Learning(seq, "test", weights));
+                    tmpConficence = m_graphLearner.calcConfidence(tmpGraph);
+                    if(tmpConficence < min){
+                        min = tmpConficence;
+                        uncertain_j = j;
+                    }
+                }
+
+                train_label.add(m_seq.getLabels().get(candidate_idx.get(uncertain_j)));
+                training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(candidate_idx.get(uncertain_j)), "train", weights));
+                candidate_idx.remove(uncertain_j);
             }
 
             if(i%10 != 0)
@@ -144,12 +170,12 @@ public class CRF {
                     i, training_data.size(), testing_seq.size());
 
             // Build up a graph learner and train it using training data.
-            GraphLearner m_graphLearner = new GraphLearner(training_data);
+            m_graphLearner = new GraphLearner(training_data);
 
             // Train
             long start = System.currentTimeMillis();
-            ArrayList<ArrayList<Integer>> trainPrediction = m_graphLearner.doTraining(maxIter);
-            double acc_cur = calcAcc(train_label, trainPrediction)[0];
+            trainPrediction = m_graphLearner.doTraining(maxIter);
+            acc_cur = calcAcc(train_label, trainPrediction)[0];
             System.out.format("[Info]cur train acc: %f\n", acc_cur);
 
 //            m_graphLearner.SaveWeights(String.format("%s/weights.txt", prefix));
