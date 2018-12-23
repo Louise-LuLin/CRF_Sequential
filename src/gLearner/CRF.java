@@ -170,7 +170,7 @@ public class CRF {
                 training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(candidate_idx.get(random_j)), "train", weights));
                 candidate_idx.remove(random_j);
             } else if(tuple_k >= 50){//choose the one with minimum confidence
-                System.out.format("-- query %d\n", i);
+                System.out.format("-- query %d with tuple_k=%d\n", i, tuple_k);
                 double min = Double.MAX_VALUE;
                 int uncertain_j = 0;
                 FactorGraph tmpGraph;
@@ -189,11 +189,13 @@ public class CRF {
                 training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(candidate_idx.get(uncertain_j)), "train", weights));
                 candidate_idx.remove(uncertain_j);
             } else {//choose sub sequence
-                System.out.format("-- query %d\n", i);
+                System.out.format("-- query %d with tuple_k=%d\n", i, tuple_k);
                 double min = Double.MAX_VALUE;
                 int uncertain_j = 0, uncertain_k=0;
                 FactorGraph tmpGraph;
                 double[] tuple_confidence;
+                ArrayList<Integer> pred_tmp = null;
+
                 for(int j = 0; j < candidate_idx.size(); j++){
                     Sequence seq = m_seq.getSequences().get(candidate_idx.get(j));
                     tmpGraph = m_graphLearner.buildFactorGraphs_test(m_seq.getStr4Learning(seq, "test", weights));
@@ -203,13 +205,26 @@ public class CRF {
                             min = tuple_confidence[k];
                             uncertain_j = j;
                             uncertain_k = k;
+                            pred_tmp = m_graphLearner.doTesting(tmpGraph);
                         }
                     }
                 }
 
-                train_label.add(Arrays.copyOfRange(m_seq.getLabels().get(candidate_idx.get(uncertain_j)), uncertain_k, tuple_k));
-                training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(candidate_idx.get(uncertain_j)).getSubSeq(uncertain_k, tuple_k),
-                        "train", weights));
+                //use model's prediction with true subsequence
+                int[] true_label = m_seq.getLabels().get(candidate_idx.get(uncertain_j));
+                for(int j = 0; j < true_label.length; i++){
+                    if(j >= uncertain_k && j < uncertain_k + tuple_k){
+                        true_label[j] = pred_tmp.get(j);
+                    }
+                }
+                train_label.add(true_label);
+                training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(candidate_idx.get(uncertain_j)), "train", weights));
+
+//                train_label.add(Arrays.copyOfRange(m_seq.getLabels().get(candidate_idx.get(uncertain_j)), uncertain_k, tuple_k));
+//                training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(candidate_idx.get(uncertain_j)).getSubSeq(uncertain_k, tuple_k),
+//                        "train", weights));
+
+                //use onely true subsequence
                 candidate_idx.remove(uncertain_j);
             }
 
