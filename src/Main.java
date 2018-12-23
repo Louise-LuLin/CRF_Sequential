@@ -7,6 +7,7 @@ public class Main {
 
     public static void main(String args[]){
         ModelParameter para = new ModelParameter(args);
+        System.setProperty("java.util.logging.config.file", "./log.property");
         /***** experiment setting *****/
 
         /***** data setting *****/
