@@ -443,9 +443,10 @@ public class GraphLearner implements Maximizable.ByGradient{
     public double[] calcTupleConfidence(FactorGraph graph, int k){
         AssignmentIterator it;
         Factor ptl;
-        Variable[] variables = new Variable[k];
+        Collection<Variable> variables = new ArrayList<>();
         int varSize, var, i;
         double max;
+        double min=Double.MAX_VALUE, tmp;
 
 //        Inferencer m_infer = TRP.createForMaxProduct();
         Inferencer m_infer = LoopyBP.createForMaxProduct();
@@ -457,10 +458,19 @@ public class GraphLearner implements Maximizable.ByGradient{
 
         for(var=0; var<varSize-k+1; var++) {
             //retrieve the MAP configuration
+            variables.clear();
             for(i=var; i < k; i++)
-                variables[i-var] = graph.get(var);
+                variables.add(graph.get(var));
 
-            ptl = m_infer.lookupMarginal(graph.marginalize(variables).varSet());
+            //get all the varset containing all the variables
+            HashVarSet c = new HashVarSet();
+            Collection adjFactors = graph.allFactorsContaining(variables);
+            for (Iterator adjf = adjFactors.iterator (); adjf.hasNext ();) {
+                Factor factor = (Factor) adjf.next ();
+                c.addAll (factor.varSet ());
+            }
+
+            ptl = m_infer.lookupMarginal(c);
             max = -Double.MAX_VALUE;
             for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
                 //System.out.println(ptl.value(it));
@@ -468,7 +478,7 @@ public class GraphLearner implements Maximizable.ByGradient{
                     max = ptl.value(it);
                 }
             }
-            tuple_confidence[var] = max;
+            tuple_confidence[var] = max/k;
         }
 
         return tuple_confidence;
