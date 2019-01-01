@@ -133,10 +133,16 @@ public class SeqAnalyzer {
 
     //gen train or test idex
     public void genTrainTestIdx(String filePath, int train_k, int test_k){
-        File file = new File(String.format("%s_train_%d.txt",
+        int candidate_k = m_seqList.size() - train_k - test_k;
+        File trainfile = new File(String.format("%s_train_%d.txt",
                 filePath, train_k));
-        if(file.exists()) {
-            System.err.println(String.format("[err] index file %s_train_%d.txt exists.",
+        File testfile = new File(String.format("%s_test_%d.txt",
+                filePath, test_k));
+        File candifile = new File(String.format("%s_candidate_%d.txt",
+                filePath, candidate_k));
+
+        if(trainfile.exists() && testfile.exists() && candifile.exists()) {
+            System.err.println(String.format("[err] index file %s_train/test/candidate_%d.txt exists.",
                     filePath, train_k));
             return;
         }
@@ -149,22 +155,18 @@ public class SeqAnalyzer {
         Collections.shuffle(all_idx);
 
         try{
-            BufferedWriter writer = new BufferedWriter(new FileWriter(new File(String.format("%s_train_%d.txt",
-                    filePath, train_k))));
+            BufferedWriter writer = new BufferedWriter(new FileWriter(trainfile));
             //print indexes
             for(int i = 0; i < train_k; i++)
                 writer.write(all_idx.get(i) + "\n");
             writer.close();
 
-            writer = new BufferedWriter((new FileWriter(new File(String.format("%s_test_%d.txt",
-                    filePath, test_k)))));
+            writer = new BufferedWriter((new FileWriter(testfile)));
             for(int i = 0; i < test_k; i++)
                 writer.write(all_idx.get(i + train_k) + "\n");
             writer.close();
 
-            int candidate_k = m_seqList.size() - train_k - test_k;
-            writer = new BufferedWriter((new FileWriter(new File(String.format("%s_candidate_%d.txt",
-                    filePath, candidate_k)))));
+            writer = new BufferedWriter((new FileWriter(candifile)));
             for(int i = 0; i < candidate_k; i++)
                 writer.write(all_idx.get(i + train_k + test_k) + "\n");
             writer.close();

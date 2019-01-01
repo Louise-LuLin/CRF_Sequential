@@ -430,8 +430,8 @@ public class GraphLearner implements Maximizable.ByGradient{
             max = -Double.MAX_VALUE;
             for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
                 //System.out.println(ptl.value(it));
-                if (ptl.value(it)>max) {
-                    max = ptl.value(it);
+                if (ptl.logValue(it)>max) {
+                    max = ptl.logValue(it);
                 }
             }
             confidence += max;
@@ -440,44 +440,59 @@ public class GraphLearner implements Maximizable.ByGradient{
         return confidence/varSize;
     }
 
-    public double[] calcTupleConfidence(FactorGraph graph, int k){
+    public double[] calcTupleConfidence(FactorGraph graph, ArrayList<Integer> pred, int k){
         AssignmentIterator it;
         Factor ptl;
-        Collection<Variable> variables = new ArrayList<>();
-        int varSize, var, i;
+        Variable variable;
+        int varSize, var, labelID = 0;
         double max;
-        double min=Double.MAX_VALUE, tmp;
 
-//        Inferencer m_infer = TRP.createForMaxProduct();
         Inferencer m_infer = LoopyBP.createForMaxProduct();
 
         varSize = graph.numVariables();
         m_infer.computeMarginals(graph);  //begin to collect the expectations
 
+        for(var=0; var<varSize; var++) {
+            //retrieve the MAP configuration
+            variable = graph.get(var);
+            ptl = m_infer.lookupMarginal(variable);
+            max = -Double.MAX_VALUE;
+            for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
+                //System.out.println(ptl.value(it));
+                if (ptl.value(it)>max) {
+                    max = ptl.value(it);
+                    labelID = it.indexOfCurrentAssn();
+                }
+            }
+            pred.add(labelID);
+        }
+
+        Assignment assn;
+        Variable[] variables = new Variable[k];
+        int[] labels = new int[k];
+        double min=Double.MAX_VALUE, tmp;
+
         double[] tuple_confidence = new double[varSize-k+1];
 
         for(var=0; var<varSize-k+1; var++) {
             //retrieve the MAP configuration
-            variables.clear();
-            for(i=var; i < k; i++)
-                variables.add(graph.get(var));
+            for(int i = var; i < var + k; i++) {
+                variables[i - var] = graph.get(i);
+                labels[i - var] = pred.get(i);
+            }
 
-            //get all the varset containing all the variables
             HashVarSet c = new HashVarSet();
-            Collection adjFactors = graph.allFactorsContaining(variables);
+            Collection adjFactors = graph.allFactorsContaining(Arrays.asList(variables));
             for (Iterator adjf = adjFactors.iterator (); adjf.hasNext ();) {
                 Factor factor = (Factor) adjf.next ();
                 c.addAll (factor.varSet ());
             }
 
             ptl = m_infer.lookupMarginal(c);
-            max = -Double.MAX_VALUE;
-            for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
-                //System.out.println(ptl.value(it));
-                if (ptl.value(it)>max) {
-                    max = ptl.value(it);
-                }
-            }
+
+            assn = new Assignment(variables, labels);
+            max = ptl.logValue(assn);
+
             tuple_confidence[var] = max/k;
         }
 

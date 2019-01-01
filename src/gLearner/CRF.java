@@ -6,6 +6,10 @@ import gLearner.GraphLearner;
 import gLearner.SeqAnalyzer;
 import gLearner.String4Learning;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.SynchronousQueue;
 
@@ -126,9 +130,14 @@ public class CRF {
         //active learning
         double[] acc;
         GraphLearner m_graphLearner = null;
+
+        ArrayList<Integer> samplesize_list = new ArrayList<>();
+        ArrayList<Double> acc_all_list = new ArrayList<>();
+        ArrayList<Double> acc_phrase_list = new ArrayList<>();
+        ArrayList<Double> acc_out_list = new ArrayList<>();
         for(int i = 0 ; i < query_k; i++){
 
-            if(i%10 == 0) {
+            if(i%5 == 0) {
 
                 System.out.format("==========\n[Info]Active query %d samples: train size = %d, test size = %d...\n",
                         i, training_data.size(), testing_seq.size());
@@ -160,6 +169,10 @@ public class CRF {
 
                 System.out.format("[Stat]Train/test finished in %.2f seconds: acc_all = %.2f, acc_phrase = %.2f, acc_out = %.2f\n",
                         (System.currentTimeMillis() - start) / 1000.0, acc[0], acc[1], acc[2]);
+                samplesize_list.add(training_data.size());
+                acc_all_list.add(acc[0]);
+                acc_phrase_list.add(acc[1]);
+                acc_out_list.add(acc[2]);
             }
 
 
@@ -173,8 +186,10 @@ public class CRF {
                 System.out.format("-- query %d with tuple_k=%d\n", i, tuple_k);
                 double min = Double.MAX_VALUE;
                 int uncertain_j = 0;
-                FactorGraph tmpGraph;
+                FactorGraph tmpGraph, targetGraph = new FactorGraph();
                 double tmpConficence;
+                ArrayList<Integer> targetPred = new ArrayList<>();
+
                 for(int j = 0; j < candidate_idx.size(); j++){
                     Sequence seq = m_seq.getSequences().get(candidate_idx.get(j));
                     tmpGraph = m_graphLearner.buildFactorGraphs_test(m_seq.getStr4Learning(seq, "test", weights));
@@ -182,8 +197,19 @@ public class CRF {
                     if(tmpConficence < min){
                         min = tmpConficence;
                         uncertain_j = j;
+                        targetGraph = tmpGraph;
                     }
                 }
+
+                System.out.format("seq %d's confidence: %f\n",
+                        candidate_idx.get(uncertain_j), min);
+
+                targetPred = m_graphLearner.doTesting(targetGraph);
+                System.out.println("pred: " + Arrays.toString(targetPred.toArray()));
+
+                //use model's prediction with true subsequence
+                int[] true_label = m_seq.getLabels().get(candidate_idx.get(uncertain_j));
+                System.out.println("true: " + Arrays.toString(true_label));
 
                 train_label.add(m_seq.getLabels().get(candidate_idx.get(uncertain_j)));
                 training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(candidate_idx.get(uncertain_j)), "train", weights));
@@ -192,43 +218,57 @@ public class CRF {
                 System.out.format("-- query %d with tuple_k=%d\n", i, tuple_k);
                 double min = Double.MAX_VALUE;
                 int uncertain_j = 0, uncertain_k=0;
-                FactorGraph tmpGraph, targetGraph=null;
+                FactorGraph tmpGraph, targetGraph = new FactorGraph();
                 double[] tuple_confidence;
-                ArrayList<Integer> pred_tmp = null;
+                double tmpConficence;
+                ArrayList<Integer> tmpPred = new ArrayList<>();
+                ArrayList<Integer> targetPred = new ArrayList<>();
 
-                for(int j = 0; j < candidate_idx.size(); j++){
+                // first find the sequence with least confidence
+                for(int j = 0; j < candidate_idx.size(); j++) {
                     Sequence seq = m_seq.getSequences().get(candidate_idx.get(j));
                     tmpGraph = m_graphLearner.buildFactorGraphs_test(m_seq.getStr4Learning(seq, "test", weights));
-                    tuple_confidence = m_graphLearner.calcTupleConfidence(tmpGraph, tuple_k);
 
-                    System.out.format("----- candidate %d with tuple_k=%d\n", j, tuple_confidence.length);
-                    for(int k = 0; k < tuple_confidence.length; k++){
-                        if(tuple_confidence[k] < min){
-                            min = tuple_confidence[k];
-                            uncertain_j = j;
-                            uncertain_k = k;
-                            targetGraph = tmpGraph;
-                        }
+                    tmpConficence = m_graphLearner.calcConfidence(tmpGraph);
+                    if (tmpConficence < min) {
+                        min = tmpConficence;
+                        uncertain_j = j;
+                        targetGraph = tmpGraph;
                     }
                 }
-                pred_tmp = m_graphLearner.doTesting(targetGraph);
 
+                System.out.format("seq %d's confidence: %f\n",
+                        candidate_idx.get(uncertain_j), min);
 
-                System.out.format("position: [%d, %d), confidence: %f\n", uncertain_k, uncertain_k + tuple_k, min);
+                targetPred.clear();
+                tuple_confidence = m_graphLearner.calcTupleConfidence(targetGraph, targetPred, tuple_k);
 
+                min = Double.MAX_VALUE;
+                for(int k = 0; k < tuple_confidence.length; k++){
+                    if(tuple_confidence[k] < min){
+                        min = tuple_confidence[k];
+                        uncertain_k = k;
+                    }
+                }
+
+                System.out.format("position: [%d, %d), confidence: %f\n",
+                        uncertain_k, uncertain_k + tuple_k, min);
+
+                System.out.println("conf: " + Arrays.toString(tuple_confidence));
+
+                System.out.println("pred: " + Arrays.toString(targetPred.toArray()));
 
                 //use model's prediction with true subsequence
                 int[] true_label = m_seq.getLabels().get(candidate_idx.get(uncertain_j));
                 System.out.println("true: " + Arrays.toString(true_label));
 
-                for(int j = 0; j < true_label.length; i++){
-                    if(j >= uncertain_k && j < uncertain_k + tuple_k){
-                        true_label[j] = pred_tmp.get(j);
-                    }
+                int[] query_label = targetPred.stream().mapToInt(a->a).toArray();
+                for(int j = uncertain_k; j < uncertain_k + tuple_k; j++){
+                    query_label[j] = true_label[j];
                 }
-                System.out.println("queried: " + Arrays.toString(true_label));
+                System.out.println("quer: " + Arrays.toString(query_label));
 
-                train_label.add(true_label);
+                train_label.add(query_label);
                 training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(candidate_idx.get(uncertain_j)), "train", weights));
 
 //                train_label.add(Arrays.copyOfRange(m_seq.getLabels().get(candidate_idx.get(uncertain_j)), uncertain_k, tuple_k));
@@ -239,6 +279,35 @@ public class CRF {
                 candidate_idx.remove(uncertain_j);
             }
 
+        }
+
+        //output result
+        prefix = String.format("%s_train%d_test%d_candi%d_tuple%d",
+                prefix, train_k, test_k, m_seq.getStrings().size() - train_k - test_k, tuple_k);
+        File acc_all_file = new File(String.format("%s_all.txt", prefix));
+        File acc_phrase_file = new File(String.format("%s_phrase.txt", prefix));
+        File acc_out_file = new File(String.format("%s_out.txt", prefix));
+        try{
+            BufferedWriter writer = new BufferedWriter(new FileWriter(acc_all_file));
+            //print indexes
+            writer.write("acc,samplesize\n");
+            for(int i = 0; i < samplesize_list.size(); i++)
+                writer.write(String.format("%f,%d\n", acc_all_list.get(i), samplesize_list.get(i)));
+            writer.close();
+
+            writer = new BufferedWriter((new FileWriter(acc_phrase_file)));
+            writer.write("acc,samplesize\n");
+            for(int i = 0; i < samplesize_list.size(); i++)
+                writer.write(String.format("%f,%d\n", acc_phrase_list.get(i), samplesize_list.get(i)));
+            writer.close();
+
+            writer = new BufferedWriter((new FileWriter(acc_out_file)));
+            writer.write("acc,samplesize\n");
+            for(int i = 0; i < samplesize_list.size(); i++)
+                writer.write(String.format("%f,%d\n", acc_out_list.get(i), samplesize_list.get(i)));
+            writer.close();
+        } catch (IOException e){
+            e.printStackTrace();
         }
 
     }
