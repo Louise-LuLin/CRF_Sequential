@@ -262,7 +262,7 @@ public class CRF {
                 int[] true_label = m_seq.getLabels().get(candidate_idx.get(uncertain_j));
                 System.out.println("true: " + Arrays.toString(true_label));
 
-                int[] query_label = targetPred.stream().mapToInt(a->a).toArray();
+                int[] query_label = targetPred.stream().mapToInt(Integer::parseInt).toArray();
                 for(int j = uncertain_k; j < uncertain_k + tuple_k; j++){
                     query_label[j] = true_label[j];
                 }
