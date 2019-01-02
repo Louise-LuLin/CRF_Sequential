@@ -14,6 +14,7 @@ public class ModelParameter {
     public int m_test_k = 200;
     public int m_query_k = 100;
     public int m_tuple_k = 0;
+    public int m_budget_k = 1;
 
     public ModelParameter(String argv[]){
 
@@ -43,6 +44,8 @@ public class ModelParameter {
                 m_query_k = Integer.valueOf(argv[i]);
             else if(argv[i-1].equals("-tuplek"))
                 m_tuple_k = Integer.valueOf(argv[i]);
+            else if(argv[i-1].equals("-budgetk"))
+                m_budget_k = Integer.valueOf(argv[i]);
             else if(argv[i-1].equals("-mask")){
                 String[] types = argv[i].split(",");
                 for(String type : types)

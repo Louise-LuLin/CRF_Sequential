@@ -100,7 +100,7 @@ public class CRF {
         return accs;
     }
 
-    public void activeLearning(String prefix, int maxIter, int train_k, int test_k, int query_k, int tuple_k){
+    public void activeLearning(String prefix, int maxIter, int train_k, int test_k, int query_k, int tuple_k, int budget_k){
         //get train and test index
         m_seq.genTrainTestIdx(prefix, train_k, test_k);
         ArrayList<Integer> train_idx = m_seq.loadIdx(prefix, "train", train_k);
@@ -243,18 +243,34 @@ public class CRF {
                 targetPred.clear();
                 tuple_confidence = m_graphLearner.calcTupleConfidence(targetGraph, targetPred, tuple_k);
 
-                min = Double.MAX_VALUE;
-                for(int k = 0; k < tuple_confidence.length; k++){
-                    if(tuple_confidence[k] < min){
-                        min = tuple_confidence[k];
-                        uncertain_k = k;
+//                min = Double.MAX_VALUE;
+//                for(int k = 0; k < tuple_confidence.length; k++){
+//                    if(tuple_confidence[k] < min){
+//                        min = tuple_confidence[k];
+//                        uncertain_k = k;
+//                    }
+//                }
+//                System.out.format("position: [%d, %d), confidence: %f\n",
+//                        uncertain_k, uncertain_k + tuple_k, min);
+                System.out.println("conf: " + Arrays.toString(tuple_confidence));
+
+                //sort the confidence
+                TreeMap<Double,Integer> confidence_map = new TreeMap<Double,Integer>();
+                for(int j = 0;j < tuple_confidence.length; j++ ) {
+                    confidence_map.put(tuple_confidence[j], j);
+                }
+                System.out.println("sort: " + confidence_map.keySet().toString());
+                System.out.println("indx: " + confidence_map.values().toString());
+
+                //get all the positions
+                Set<Integer> pos = new HashSet<>();
+                for(int j = 0; j < budget_k; j++){
+                    int idx = (int) confidence_map.values().toArray()[j];
+                    for(int k = idx; k < idx + tuple_k; k++){
+                        pos.add(k);
                     }
                 }
-
-                System.out.format("position: [%d, %d), confidence: %f\n",
-                        uncertain_k, uncertain_k + tuple_k, min);
-
-                System.out.println("conf: " + Arrays.toString(tuple_confidence));
+                System.out.format("budget %d: %s\n", budget_k, pos.toString());
 
                 System.out.println("pred: " + Arrays.toString(targetPred.toArray()));
 
@@ -265,8 +281,8 @@ public class CRF {
                 int[] query_label = new int[targetPred.size()];
                 for(int j = 0; j < targetPred.size(); j++)
                     query_label[j] = targetPred.get(j);
-                for(int j = uncertain_k; j < uncertain_k + tuple_k; j++){
-                    query_label[j] = true_label[j];
+                for(Integer idx : pos){
+                    query_label[idx] = true_label[idx];
                 }
                 System.out.println("quer: " + Arrays.toString(query_label));
 
@@ -287,8 +303,8 @@ public class CRF {
         }
 
         //output result
-        prefix = String.format("%s_train%d_test%d_candi%d_tuple%d",
-                prefix, train_k, test_k, m_seq.getStrings().size() - train_k - test_k, tuple_k);
+        prefix = String.format("%s_train%d_test%d_candi%d_tuple%d_budget%d",
+                prefix, train_k, test_k, m_seq.getStrings().size() - train_k - test_k, tuple_k, budget_k);
         File acc_all_file = new File(String.format("%s_all.txt", prefix));
         File acc_phrase_file = new File(String.format("%s_phrase.txt", prefix));
         File acc_out_file = new File(String.format("%s_out.txt", prefix));
