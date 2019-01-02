@@ -16,4 +16,8 @@ public class Token {
 		m_index = index;
 		m_label = -1;
 	}
+
+	public void setLabel(int label){
+		m_label = label;
+	}
 }

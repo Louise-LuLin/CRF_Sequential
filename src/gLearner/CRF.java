@@ -271,7 +271,10 @@ public class CRF {
                 System.out.println("quer: " + Arrays.toString(query_label));
 
                 train_label.add(query_label);
-                training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(candidate_idx.get(uncertain_j)), "train", weights));
+                Sequence query_seq = m_seq.getSequences().get(candidate_idx.get(uncertain_j));
+                query_seq.setLabels(query_label);
+                System.out.println("2trn: " + Arrays.toString(query_seq.getLabels()));
+                training_data.add(m_seq.getStr4Learning(query_seq, "train", weights));
 
 //                train_label.add(Arrays.copyOfRange(m_seq.getLabels().get(candidate_idx.get(uncertain_j)), uncertain_k, tuple_k));
 //                training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(candidate_idx.get(uncertain_j)).getSubSeq(uncertain_k, tuple_k),

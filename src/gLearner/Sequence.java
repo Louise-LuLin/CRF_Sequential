@@ -17,6 +17,13 @@ public class Sequence {
 		this.m_tokenList = tokenlist;
 	}
 
+	void setLabels(int[] labels){
+		ArrayList<Token> tokenlist = new ArrayList<>();
+		for(int i = 0; i < m_tokenList.size(); i++){
+			m_tokenList.get(i).setLabel(labels[i]);
+		}
+	}
+
 	String getContent(){ return m_content; }
 	
 	void addToken(String content, int index) {
