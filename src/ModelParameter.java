@@ -15,6 +15,10 @@ public class ModelParameter {
     public int m_query_k = 100;
     public int m_tuple_k = 0;
     public int m_budget_k = 1;
+    //LC: least confidence
+    //M: margin
+    //SE: subsequence entropy
+    public String m_model = "LC";
 
     public ModelParameter(String argv[]){
 
@@ -46,6 +50,8 @@ public class ModelParameter {
                 m_tuple_k = Integer.valueOf(argv[i]);
             else if(argv[i-1].equals("-budgetk"))
                 m_budget_k = Integer.valueOf(argv[i]);
+            else if (argv[i-1].equals("-model"))
+                m_model = argv[i];
             else if(argv[i-1].equals("-mask")){
                 String[] types = argv[i].split(",");
                 for(String type : types)

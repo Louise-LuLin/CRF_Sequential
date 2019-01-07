@@ -100,7 +100,10 @@ public class CRF {
         return accs;
     }
 
-    public void activeLearning(String prefix, int maxIter, int train_k, int test_k, int query_k, int tuple_k, int budget_k){
+
+
+    public void activeLearning(String prefix, int maxIter, int train_k, int test_k,
+                               int query_k, int tuple_k, int budget_k, String model){
         //get train and test index
         m_seq.genTrainTestIdx(prefix, train_k, test_k);
         ArrayList<Integer> train_idx = m_seq.loadIdx(prefix, "train", train_k);
@@ -241,7 +244,10 @@ public class CRF {
                         candidate_idx.get(uncertain_j), min);
 
                 targetPred.clear();
-                tuple_confidence = m_graphLearner.calcTupleConfidence(targetGraph, targetPred, tuple_k);
+                if(model.equals("LC"))
+                    tuple_confidence = m_graphLearner.calcTupleConfidence(targetGraph, targetPred, tuple_k);
+                else
+                    tuple_confidence = m_graphLearner.calcTupleMargin(targetGraph, targetPred, tuple_k);
 
 //                min = Double.MAX_VALUE;
 //                for(int k = 0; k < tuple_confidence.length; k++){
@@ -252,7 +258,7 @@ public class CRF {
 //                }
 //                System.out.format("position: [%d, %d), confidence: %f\n",
 //                        uncertain_k, uncertain_k + tuple_k, min);
-                System.out.println("conf: " + Arrays.toString(tuple_confidence));
+                System.out.format("%s: %s\n", model, Arrays.toString(tuple_confidence));
 
                 //sort the confidence
                 TreeMap<Double,Integer> confidence_map = new TreeMap<Double,Integer>();
