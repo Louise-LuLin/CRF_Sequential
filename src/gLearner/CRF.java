@@ -244,10 +244,7 @@ public class CRF {
                         candidate_idx.get(uncertain_j), min);
 
                 targetPred.clear();
-                if(model.equals("LC"))
-                    tuple_confidence = m_graphLearner.calcTupleConfidence(targetGraph, targetPred, tuple_k);
-                else
-                    tuple_confidence = m_graphLearner.calcTupleMargin(targetGraph, targetPred, tuple_k);
+                tuple_confidence = m_graphLearner.calcTupleUncertainty(targetGraph, targetPred, tuple_k, model);
 
 //                min = Double.MAX_VALUE;
 //                for(int k = 0; k < tuple_confidence.length; k++){

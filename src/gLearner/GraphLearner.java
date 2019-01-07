@@ -440,7 +440,7 @@ public class GraphLearner implements Maximizable.ByGradient{
         return confidence/varSize;
     }
 
-    public double[] calcTupleConfidence(FactorGraph graph, ArrayList<Integer> pred, int k){
+    public double[] calcTupleUncertainty(FactorGraph graph, ArrayList<Integer> pred, int k, String model){
         AssignmentIterator it;
         Factor ptl;
         Variable variable;
@@ -467,12 +467,10 @@ public class GraphLearner implements Maximizable.ByGradient{
             pred.add(labelID);
         }
 
-        Assignment assn;
         Variable[] variables = new Variable[k];
         int[] labels = new int[k];
-        double min=Double.MAX_VALUE, tmp;
 
-        double[] tuple_confidence = new double[varSize-k+1];
+        double[] tuple_uncertainty = new double[varSize-k+1];
 
         for(var=0; var<varSize-k+1; var++) {
             //retrieve the MAP configuration
@@ -490,110 +488,30 @@ public class GraphLearner implements Maximizable.ByGradient{
 
             ptl = m_infer.lookupMarginal(c);
 
-            assn = new Assignment(variables, labels);
-            max = ptl.logValue(assn);
-
-            tuple_confidence[var] = max/k;
-        }
-
-        return tuple_confidence;
-    }
-
-    public double[] calcTupleMargin(FactorGraph graph, ArrayList<Integer> pred, int k){
-        AssignmentIterator it;
-        Factor ptl;
-        Variable variable;
-        int varSize, var, labelID = 0;
-        double max;
-
-        Inferencer m_infer = LoopyBP.createForMaxProduct();
-
-        varSize = graph.numVariables();
-        m_infer.computeMarginals(graph);  //begin to collect the expectations
-        for(var=0; var<varSize; var++) {
-            //retrieve the MAP configuration
-            variable = graph.get(var);
-            ptl = m_infer.lookupMarginal(variable);
-            max = -Double.MAX_VALUE;
-            for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
-                //System.out.println(ptl.value(it));
-                if (ptl.value(it)>max) {
-                    max = ptl.value(it);
-                    labelID = it.indexOfCurrentAssn();
+            if(model.equals("LC")) {
+                Assignment assn = new Assignment(variables, labels);
+                max = ptl.logValue(assn);
+            } else if(model.equals("M")){
+                TreeMap<Double,Assignment> loglikelihood_map = new TreeMap<Double,Assignment>();
+                for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
+                    loglikelihood_map.put(ptl.logValue(it), it.assignment());
+                }
+                max = (double) loglikelihood_map.keySet().toArray()[loglikelihood_map.size()-1] -
+                        (double) loglikelihood_map.keySet().toArray()[loglikelihood_map.size()-2];
+            } else {
+                max = 0.0;
+                for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
+                    double p = ptl.logValue(it);
+                    if (!Double.isInfinite(p)) {
+                        max += p * Math.exp(p);
+                    }
                 }
             }
-            pred.add(labelID);
+
+            tuple_uncertainty[var] = max;
         }
 
-        Variable[] variables = new Variable[k];
-
-        double[] margins = new double[varSize-k+1];
-        TreeMap<Double,Assignment> loglikelihood_map;
-        for(var=0; var<varSize-k+1; var++) {
-            //retrieve the MAP configuration
-            for(int i = var; i < var + k; i++) {
-                variables[i - var] = graph.get(i);
-            }
-
-            HashVarSet c = new HashVarSet();
-            Collection adjFactors = graph.allFactorsContaining(Arrays.asList(variables));
-            for (Iterator adjf = adjFactors.iterator (); adjf.hasNext ();) {
-                Factor factor = (Factor) adjf.next ();
-                c.addAll (factor.varSet ());
-            }
-
-            ptl = m_infer.lookupMarginal(c);
-            loglikelihood_map = new TreeMap<Double,Assignment>();
-            for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
-                //System.out.println(ptl.value(it));
-                loglikelihood_map.put(ptl.logValue(it), it.assignment());
-            }
-            margins[var] = (double) loglikelihood_map.keySet().toArray()[loglikelihood_map.size()-1] -
-                    (double) loglikelihood_map.keySet().toArray()[loglikelihood_map.size()-2];
-        }
-
-        return margins;
-    }
-
-    public double[] calcTupleEntropy(FactorGraph graph, int k){
-        AssignmentIterator it;
-        Factor ptl;
-        int varSize, var;
-        double max;
-
-        Inferencer m_infer = LoopyBP.createForMaxProduct();
-
-        varSize = graph.numVariables();
-        m_infer.computeMarginals(graph);  //begin to collect the expectations
-
-        Variable[] variables = new Variable[k];
-
-        double[] margins = new double[varSize-k+1];
-        TreeMap<Double,Assignment> loglikelihood_map;
-        for(var=0; var<varSize-k+1; var++) {
-            //retrieve the MAP configuration
-            for(int i = var; i < var + k; i++) {
-                variables[i - var] = graph.get(i);
-            }
-
-            HashVarSet c = new HashVarSet();
-            Collection adjFactors = graph.allFactorsContaining(Arrays.asList(variables));
-            for (Iterator adjf = adjFactors.iterator (); adjf.hasNext ();) {
-                Factor factor = (Factor) adjf.next ();
-                c.addAll (factor.varSet ());
-            }
-
-            ptl = m_infer.lookupMarginal(c);
-            loglikelihood_map = new TreeMap<Double,Assignment>();
-            for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
-                //System.out.println(ptl.value(it));
-                loglikelihood_map.put(ptl.logValue(it), it.assignment());
-            }
-            margins[var] = (double) loglikelihood_map.keySet().toArray()[0] -
-                    (double) loglikelihood_map.keySet().toArray()[1];
-        }
-
-        return margins;
+        return tuple_uncertainty;
     }
 
     public ArrayList<Integer> doTesting(FactorGraph graph){
