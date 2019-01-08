@@ -306,8 +306,8 @@ public class CRF {
         }
 
         //output result
-        prefix = String.format("%s_train%d_test%d_candi%d_tuple%d_budget%d",
-                prefix, train_k, test_k, m_seq.getStrings().size() - train_k - test_k, tuple_k, budget_k);
+        prefix = String.format("%s_train%d_test%d_candi%d_tuple%d_budget%d_%s",
+                prefix, train_k, test_k, m_seq.getStrings().size() - train_k - test_k, tuple_k, budget_k, model);
         File acc_all_file = new File(String.format("%s_all.txt", prefix));
         File acc_phrase_file = new File(String.format("%s_phrase.txt", prefix));
         File acc_out_file = new File(String.format("%s_out.txt", prefix));
