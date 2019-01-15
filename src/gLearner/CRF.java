@@ -138,6 +138,7 @@ public class CRF {
         ArrayList<Double> acc_all_list = new ArrayList<>();
         ArrayList<Double> acc_phrase_list = new ArrayList<>();
         ArrayList<Double> acc_out_list = new ArrayList<>();
+        double TP = 0, TPFN = 0, TPFP = 0, TP_accumulate = 0, TPFP_accumulate = 0, TPFN_accumulate = 0;
         for(int i = 0 ; i < query_k; i++){
 
             if(i%5 == 0) {
@@ -176,6 +177,20 @@ public class CRF {
                 acc_all_list.add(acc[0]);
                 acc_phrase_list.add(acc[1]);
                 acc_out_list.add(acc[2]);
+
+                TP_accumulate += TP;
+                TPFP_accumulate += TPFP;
+                TPFN_accumulate += TPFN;
+                double prec_current = TPFP > 0? TP/TPFP : -1;
+                double prec_accumulate = TPFP_accumulate > 0? TP_accumulate/TPFP_accumulate : -1;
+                double recall_current = TPFN > 0? TP/TPFN : -1;
+                double recall_accumulate = TPFN_accumulate > 0? TP_accumulate / TPFN_accumulate : -1;
+                System.out.format("[Stat]hitting rate: current_precision = %f, accumulate_precision = %f, " +
+                                "current_recall = %f, accumulate_recall = %f\n",
+                        prec_current, prec_accumulate, recall_current, recall_accumulate);
+                TP = 0;
+                TPFP = 0;
+                TPFN = 0;
             }
 
 
@@ -282,10 +297,17 @@ public class CRF {
                 System.out.println("true: " + Arrays.toString(true_label));
 
                 int[] query_label = new int[targetPred.size()];
-                for(int j = 0; j < targetPred.size(); j++)
+                for(int j = 0; j < targetPred.size(); j++) {
                     query_label[j] = targetPred.get(j);
+                    if(targetPred.get(j) != true_label[j]){
+                        TPFN += 1;
+                    }
+                }
+                TPFP += pos.size();
                 for(Integer idx : pos){
                     query_label[idx] = true_label[idx];
+                    if(targetPred.get(idx) != true_label[idx])
+                        TP += 1;
                 }
                 System.out.println("quer: " + Arrays.toString(query_label));
 
@@ -333,7 +355,6 @@ public class CRF {
         } catch (IOException e){
             e.printStackTrace();
         }
-
     }
 
     public void crossValidation(int k, String prefix, int maxIter){
