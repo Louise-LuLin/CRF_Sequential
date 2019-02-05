@@ -277,6 +277,19 @@ public class CRF {
                 for(int j = 0;j < tuple_confidence.length; j++ ) {
                     confidence_map.put(tuple_confidence[j], j);
                 }
+
+                if(model.equals("random")) {
+                    confidence_map.clear();
+                    ArrayList<Integer> tmp = new ArrayList<>();
+                    for(int j = 0;j < tuple_confidence.length; j++ ) {
+                        tmp.add(j);
+                    }
+                    Collections.shuffle(tmp);
+                    for(int j = 0;j < tuple_confidence.length; j++ ) {
+                        confidence_map.put((double)j, tmp.get(j));
+                    }
+                }
+
                 System.out.println("sort: " + confidence_map.keySet().toString());
                 System.out.println("indx: " + confidence_map.values().toString());
 
