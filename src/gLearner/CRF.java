@@ -356,10 +356,12 @@ public class CRF {
         File acc_all_file = new File(String.format("%s_all.txt", prefix));
         File acc_phrase_file = new File(String.format("%s_phrase.txt", prefix));
         File acc_out_file = new File(String.format("%s_out.txt", prefix));
-        File string_file = new File(String.format("%s_string.txt", prefix));
-        File label_file = new File(String.format("%s_label_query.txt", prefix));
-        File label_true_file = new File(String.format("%s_label_true.txt", prefix));
-        File label_pred_file = new File(String.format("%s_label_pred.txt", prefix));
+        File train_string_file = new File(String.format("%s_train_string.txt", prefix));
+        File train_label_file = new File(String.format("%s_train_label.txt", prefix));
+        File train_label_true_file = new File(String.format("%s_train_label_true.txt", prefix));
+        File train_label_pred_file = new File(String.format("%s_train_label_pred.txt", prefix));
+        File test_string_file = new File(String.format("%s_test_string.txt", prefix));
+        File test_label_file = new File(String.format("%s_test_label.txt", prefix));
         try{
             BufferedWriter writer = new BufferedWriter(new FileWriter(acc_all_file));
             //print indexes
@@ -380,14 +382,14 @@ public class CRF {
                 writer.write(String.format("%f,%d\n", acc_out_list.get(i), samplesize_list.get(i)));
             writer.close();
 
-            writer = new BufferedWriter((new FileWriter(string_file)));
+            writer = new BufferedWriter((new FileWriter(train_string_file)));
             for(int i = 0; i < trace_samples.size(); i++) {
                 writer.write(trace_samples.get(i).getContent());
                 writer.write("\n");
             }
             writer.close();
 
-            writer = new BufferedWriter((new FileWriter(label_file)));
+            writer = new BufferedWriter((new FileWriter(train_label_file)));
             for(int i = 0; i < trace_samples.size(); i++) {
                 int[] label_idxs = trace_samples.get(i).getLabels();
                 writer.write(m_seq.getLabelName(label_idxs[0]));
@@ -398,7 +400,25 @@ public class CRF {
             }
             writer.close();
 
-            writer = new BufferedWriter((new FileWriter(label_pred_file)));
+            writer = new BufferedWriter((new FileWriter(test_string_file)));
+            for(int i = 0; i < testing_seq.size(); i++) {
+                writer.write(testing_seq.get(i).getContent());
+                writer.write("\n");
+            }
+            writer.close();
+
+            writer = new BufferedWriter((new FileWriter(test_label_file)));
+            for(int i = 0; i < testing_seq.size(); i++) {
+                int[] label_idxs = testing_seq.get(i).getLabels();
+                writer.write(m_seq.getLabelName(label_idxs[0]));
+                for(int j = 1; j < label_idxs.length; j++) {
+                    writer.write(String.format(",%s", m_seq.getLabelName(label_idxs[j])));
+                }
+                writer.write("\n");
+            }
+            writer.close();
+
+            writer = new BufferedWriter((new FileWriter(train_label_pred_file)));
             for(int i = 0; i < pred_label.size(); i++) {
                 int[] label_idxs = pred_label.get(i);
                 writer.write(m_seq.getLabelName(label_idxs[0]));
@@ -409,7 +429,7 @@ public class CRF {
             }
             writer.close();
 
-            writer = new BufferedWriter((new FileWriter(label_true_file)));
+            writer = new BufferedWriter((new FileWriter(train_label_true_file)));
             for(int i = 0; i < train_label.size(); i++) {
                 int[] label_idxs = train_label.get(i);
                 writer.write(m_seq.getLabelName(label_idxs[0]));
