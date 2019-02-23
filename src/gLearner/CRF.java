@@ -117,10 +117,15 @@ public class CRF {
         Map<Integer, Double> weights = new TreeMap<>();
 
         ArrayList<int[]> train_label = new ArrayList<>();
+        ArrayList<int[]> pred_label = new ArrayList<>();
         ArrayList<String4Learning> training_data = new ArrayList<>();
+        ArrayList<Sequence> trace_samples = new ArrayList<>();
+
         for(int i = 0; i < train_idx.size(); i++){
             train_label.add(m_seq.getLabels().get(train_idx.get(i)));
+            pred_label.add(m_seq.getLabels().get(train_idx.get(i)));
             training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(train_idx.get(i)), "train", weights));
+            trace_samples.add(m_seq.getSequences().get(train_idx.get(i)));
         }
 
         ArrayList<int[]> test_label = new ArrayList<>();
@@ -200,6 +205,7 @@ public class CRF {
                 train_label.add(m_seq.getLabels().get(candidate_idx.get(random_j)));
                 training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(candidate_idx.get(random_j)), "train", weights));
                 candidate_idx.remove(random_j);
+                trace_samples.add(m_seq.getSequences().get(candidate_idx.get(random_j)));
             } else if(tuple_k >= 50){//choose the one with minimum confidence
                 System.out.format("-- query %d with tuple_k=%d\n", i, tuple_k);
                 double min = Double.MAX_VALUE;
@@ -232,6 +238,7 @@ public class CRF {
                 train_label.add(m_seq.getLabels().get(candidate_idx.get(uncertain_j)));
                 training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(candidate_idx.get(uncertain_j)), "train", weights));
                 candidate_idx.remove(uncertain_j);
+                trace_samples.add(m_seq.getSequences().get(candidate_idx.get(uncertain_j)));
             } else {//choose sub sequence
                 System.out.format("-- query %d with tuple_k=%d\n", i, tuple_k);
                 double min = Double.MAX_VALUE;
@@ -310,8 +317,10 @@ public class CRF {
                 System.out.println("true: " + Arrays.toString(true_label));
 
                 int[] query_label = new int[targetPred.size()];
+                int[] predict_label = new int[targetPred.size()];
                 for(int j = 0; j < targetPred.size(); j++) {
                     query_label[j] = targetPred.get(j);
+                    predict_label[j] = targetPred.get(j);
                     if(targetPred.get(j) != true_label[j]){
                         TPFN += 1;
                     }
@@ -324,7 +333,8 @@ public class CRF {
                 }
                 System.out.println("quer: " + Arrays.toString(query_label));
 
-                train_label.add(query_label);
+                train_label.add(true_label);
+                pred_label.add(predict_label);
                 Sequence query_seq = m_seq.getSequences().get(candidate_idx.get(uncertain_j));
                 query_seq.setLabels(query_label);
                 System.out.println("2trn: " + Arrays.toString(query_seq.getLabels()));
@@ -336,8 +346,8 @@ public class CRF {
 
                 //use only true subsequence
                 candidate_idx.remove(uncertain_j);
+                trace_samples.add(query_seq);
             }
-
         }
 
         //output result
@@ -346,6 +356,10 @@ public class CRF {
         File acc_all_file = new File(String.format("%s_all.txt", prefix));
         File acc_phrase_file = new File(String.format("%s_phrase.txt", prefix));
         File acc_out_file = new File(String.format("%s_out.txt", prefix));
+        File string_file = new File(String.format("%s_string.txt", prefix));
+        File label_file = new File(String.format("%s_label_query.txt", prefix));
+        File label_true_file = new File(String.format("%s_label_true.txt", prefix));
+        File label_pred_file = new File(String.format("%s_label_pred.txt", prefix));
         try{
             BufferedWriter writer = new BufferedWriter(new FileWriter(acc_all_file));
             //print indexes
@@ -364,6 +378,46 @@ public class CRF {
             writer.write("acc,samplesize\n");
             for(int i = 0; i < samplesize_list.size(); i++)
                 writer.write(String.format("%f,%d\n", acc_out_list.get(i), samplesize_list.get(i)));
+            writer.close();
+
+            writer = new BufferedWriter((new FileWriter(string_file)));
+            for(int i = 0; i < trace_samples.size(); i++) {
+                writer.write(trace_samples.get(i).getContent());
+                writer.write("\n");
+            }
+            writer.close();
+
+            writer = new BufferedWriter((new FileWriter(label_file)));
+            for(int i = 0; i < trace_samples.size(); i++) {
+                int[] label_idxs = trace_samples.get(i).getLabels();
+                writer.write(m_seq.getLabelName(label_idxs[0]));
+                for(int j = 1; j < label_idxs.length; j++) {
+                    writer.write(String.format(",%s", m_seq.getLabelName(label_idxs[j])));
+                }
+                writer.write("\n");
+            }
+            writer.close();
+
+            writer = new BufferedWriter((new FileWriter(label_pred_file)));
+            for(int i = 0; i < pred_label.size(); i++) {
+                int[] label_idxs = pred_label.get(i);
+                writer.write(m_seq.getLabelName(label_idxs[0]));
+                for(int j = 1; j < label_idxs.length; j++) {
+                    writer.write(String.format(",%s", m_seq.getLabelName(label_idxs[j])));
+                }
+                writer.write("\n");
+            }
+            writer.close();
+
+            writer = new BufferedWriter((new FileWriter(label_true_file)));
+            for(int i = 0; i < train_label.size(); i++) {
+                int[] label_idxs = train_label.get(i);
+                writer.write(m_seq.getLabelName(label_idxs[0]));
+                for(int j = 1; j < label_idxs.length; j++) {
+                    writer.write(String.format(",%s", m_seq.getLabelName(label_idxs[j])));
+                }
+                writer.write("\n");
+            }
             writer.close();
         } catch (IOException e){
             e.printStackTrace();

@@ -51,6 +51,8 @@ public class SeqAnalyzer {
 
     public ArrayList<String> getLabelNames(){ return this.m_labelNames; }
 
+    public String getLabelName(int i){ return this.m_labelNames.get(i); }
+
     public HashMap<String, Integer> getLabelNameIndex(){ return this.m_labelNameIndex; }
 
     public ArrayList<String> getStrings(){ 
