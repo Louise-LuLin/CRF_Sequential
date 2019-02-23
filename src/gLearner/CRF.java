@@ -146,7 +146,7 @@ public class CRF {
         double TP = 0, TPFN = 0, TPFP = 0, TP_accumulate = 0, TPFP_accumulate = 0, TPFN_accumulate = 0;
         for(int i = 0 ; i < query_k; i++){
 
-            if(i%5 == 0) {
+            if(i%1 == 0) {
 
                 System.out.format("==========\n[Info]Active query %d samples: train size = %d, test size = %d...\n",
                         i, training_data.size(), testing_seq.size());
