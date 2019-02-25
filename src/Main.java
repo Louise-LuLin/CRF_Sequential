@@ -38,9 +38,9 @@ public class Main {
         seqAnalyzer.setMask(featureMasks);
 
         CRF crfModel = new CRF(seqAnalyzer);
-        crfModel.activeLearning(String.format("%s/%s", para.m_prefix, para.m_source),
-                para.m_iterMax, para.m_train_k, para.m_test_k, para.m_query_k, para.m_tuple_k, para.m_budget_k, para.m_model);
-//        crfModel.crossValidation(para.m_crossV, String.format("%s/%s", para.m_prefix, para.m_source), para.m_iterMax);
+//        crfModel.activeLearning(String.format("%s/%s", para.m_prefix, para.m_source),
+//                para.m_iterMax, para.m_train_k, para.m_test_k, para.m_query_k, para.m_tuple_k, para.m_budget_k, para.m_model);
+        crfModel.crossValidation(para.m_crossV, String.format("%s/%s", para.m_prefix, para.m_source), para.m_iterMax);
     }
 
 }
