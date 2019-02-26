@@ -126,8 +126,8 @@ public class SeqAnalyzer {
                     seq.addToken(token, idx);
                 }
 
-                line2 = br.readLine();
-                labels = line.split(",");
+                line2 = br2.readLine();
+                labels = line2.split(",");
                 int tokenIdx = 0;
                 for(String s: labels){
                     if(s.isEmpty())

@@ -456,7 +456,7 @@ public class CRF {
         Map<Integer, Double> weights = new TreeMap<>();
 
         for(int i = 0; i < m_seq.getStrings().size(); i++) {
-            if(i < cut) {
+            if(i > cut) {
                 test_label.add(m_seq.getLabels().get(i));
                 testing_seq.add(m_seq.getSequences().get(i));
             } else {
