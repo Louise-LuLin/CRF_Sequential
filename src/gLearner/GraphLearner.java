@@ -455,16 +455,18 @@ public class GraphLearner implements Maximizable.ByGradient{
         for(var=0; var<varSize; var++) {
             //retrieve the MAP configuration
             variable = graph.get(var);
-            ptl = m_infer.lookupMarginal(variable);
-            max = -Double.MAX_VALUE;
-            for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
-                //System.out.println(ptl.value(it));
-                if (ptl.value(it)>max) {
-                    max = ptl.value(it);
-                    labelID = it.indexOfCurrentAssn();
-                }
-            }
+            int best = m_infer.lookupMarginal(variable).argmax();
             pred.add(labelID);
+//            ptl = m_infer.lookupMarginal(variable);
+//            max = -Double.MAX_VALUE;
+//            for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
+//                //System.out.println(ptl.value(it));
+//                if (ptl.value(it)>max) {
+//                    max = ptl.value(it);
+//                    labelID = it.indexOfCurrentAssn();
+//                }
+//            }
+//            pred.add(labelID);
         }
 
         Variable[] variables = new Variable[k];
@@ -532,16 +534,18 @@ public class GraphLearner implements Maximizable.ByGradient{
         for(var=0; var<varSize; var++) {
             //retrieve the MAP configuration
             variable = graph.get(var);
-            ptl = m_infer.lookupMarginal(variable);
-            max = -Double.MAX_VALUE;
-            for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
-                //System.out.println(ptl.value(it));
-                if (ptl.logValue(it)>max) {
-                    max = ptl.logValue(it);
-                    labelID = it.indexOfCurrentAssn();
-                }
-            }
+            int best = m_infer.lookupMarginal(variable).argmax();
             pred.add(labelID);
+//            ptl = m_infer.lookupMarginal(variable);
+//            max = -Double.MAX_VALUE;
+//            for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
+//                //System.out.println(ptl.value(it));
+//                if (ptl.logValue(it)>max) {
+//                    max = ptl.logValue(it);
+//                    labelID = it.indexOfCurrentAssn();
+//                }
+//            }
+//            pred.add(labelID);
         }
 
         return pred;
