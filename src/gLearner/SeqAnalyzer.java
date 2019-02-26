@@ -106,12 +106,16 @@ public class SeqAnalyzer {
         }
     }
 
-    public void loadSequence(String filePath, int maxNum){
-    	m_seqList.clear();
+    public void loadSequence(String stringPath, String labelPath, int maxNum, String mode){
+        if(mode.equals("new"))
+    	    m_seqList.clear();
     	
         // Read training strings.
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
-            String line, token;
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(stringPath));
+            BufferedReader br2 = new BufferedReader(new FileReader(labelPath));
+            String line, line2, token;
+            String[] labels;
             
             while ((line = br.readLine()) != null && line.length() > 0) {
             	Sequence seq = new Sequence(line);
@@ -121,15 +125,27 @@ public class SeqAnalyzer {
                     idx = getTokenIndex(token); //dynamically expand tokenNames: each char to string
                     seq.addToken(token, idx);
                 }
-                
+
+                line2 = br.readLine();
+                labels = line.split(",");
+                int tokenIdx = 0;
+                for(String s: labels){
+                    if(s.isEmpty())
+                        continue;
+                    seq.assignLabel(tokenIdx++, getLabelIndex(s));//dynamically expand labelNames
+                }
+
                 m_seqList.add(seq);
                 if(m_seqList.size() >= maxNum)
                     break;
             }
+            getLabelIndex("START");
+            getTokenIndex("END");
             System.out.format("[Info]token size: %d\n", m_tokenNames.size());
+            System.out.format("[Info]Label size: %d\n", m_labelNames.size());
 
         } catch (Exception e){
-            System.err.format("[Err]File %s doesn't exist.\n", filePath);
+            System.err.format("[Err]File %s doesn't exist.\n", stringPath);
         }
     }
 
@@ -197,36 +213,6 @@ public class SeqAnalyzer {
         }
 
         return idx_list;
-    }
-
-    //this is a poor design of loading input files, where we have to assume the alignment by line number
-    public void loadLabel(String filePath, int maxNum){
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
-            String line;
-            String[] labels;
-            int lineNo = 0;
-            
-            while ((line = br.readLine()) != null && line.length() > 0) {
-            	Sequence seq = m_seqList.get(lineNo);
-            	
-                labels = line.split(",");
-                int tokenIdx = 0;
-                for(String s: labels){
-                    if(s.isEmpty())
-                        continue;
-                    seq.assignLabel(tokenIdx++, getLabelIndex(s));//dynamically expand labelNames
-                }
-                
-                if(++lineNo >= maxNum)
-                    break;
-            }
-            getLabelIndex("START");
-            getTokenIndex("END");
-            System.out.format("[Info]Label size: %d\n", m_labelNames.size());
-
-        } catch (Exception e){
-            System.err.format("[Err]File %s doesn't exist.\n", filePath);
-        }
     }
 
     //To create the training sequence
