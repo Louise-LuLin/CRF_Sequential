@@ -444,7 +444,7 @@ public class GraphLearner implements Maximizable.ByGradient{
         AssignmentIterator it;
         Factor ptl;
         Variable variable;
-        int varSize, var, labelID = 0;
+        int varSize, var, labelID = 6;
         double max;
 
         Inferencer m_infer = LoopyBP.createForMaxProduct();
