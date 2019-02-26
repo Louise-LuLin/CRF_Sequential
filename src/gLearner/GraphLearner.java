@@ -456,7 +456,7 @@ public class GraphLearner implements Maximizable.ByGradient{
             //retrieve the MAP configuration
             variable = graph.get(var);
             int best = m_infer.lookupMarginal(variable).argmax();
-            pred.add(labelID);
+            pred.add(best);
 //            ptl = m_infer.lookupMarginal(variable);
 //            max = -Double.MAX_VALUE;
 //            for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
@@ -535,7 +535,7 @@ public class GraphLearner implements Maximizable.ByGradient{
             //retrieve the MAP configuration
             variable = graph.get(var);
             int best = m_infer.lookupMarginal(variable).argmax();
-            pred.add(labelID);
+            pred.add(best);
 //            ptl = m_infer.lookupMarginal(variable);
 //            max = -Double.MAX_VALUE;
 //            for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
