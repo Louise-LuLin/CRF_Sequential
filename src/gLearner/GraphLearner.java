@@ -519,7 +519,7 @@ public class GraphLearner implements Maximizable.ByGradient{
         AssignmentIterator it;
         Factor ptl;
         Variable variable;
-        int varSize, var, labelID = 0;
+        int varSize, var, labelID = 6;
         double max;
         ArrayList<Integer> pred = new ArrayList<>();
 
@@ -536,8 +536,8 @@ public class GraphLearner implements Maximizable.ByGradient{
             max = -Double.MAX_VALUE;
             for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
                 //System.out.println(ptl.value(it));
-                if (ptl.value(it)>max) {
-                    max = ptl.value(it);
+                if (ptl.logValue(it)>max) {
+                    max = ptl.logValue(it);
                     labelID = it.indexOfCurrentAssn();
                 }
             }

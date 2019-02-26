@@ -21,7 +21,6 @@ public class Main {
         String strPath_test = String.format("%s/%s/test_string.txt", para.m_prefix, para.m_source);
         String lblPath_test = String.format("%s/%s/test_label.txt", para.m_prefix, para.m_source);
 
-
         /**** load string and label data ****/
         SeqAnalyzer seqAnalyzer = new SeqAnalyzer(para.m_source);
         seqAnalyzer.loadSequence(strPath, lblPath, para.m_samplesize, "new");
@@ -42,6 +41,7 @@ public class Main {
             featureMasks.put(type, Boolean.TRUE);
         }
         seqAnalyzer.setMask(featureMasks);
+
 
         CRF crfModel = new CRF(seqAnalyzer);
 //        crfModel.activeLearning(String.format("%s/%s", para.m_prefix, para.m_source),
