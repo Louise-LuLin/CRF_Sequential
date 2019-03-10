@@ -271,6 +271,9 @@ public class SeqAnalyzer {
                                 m_labelNames.size() * (type / 2) + cur_label);
                     }
                 } else {//test
+                    for(int arr_i = 0; arr_i < feature_value_arr.length; arr_i++) {
+                        feature_value_arr[arr_i] = Math.random();
+                    }
                     for(int label_i = 0; label_i < m_labelNames.size(); label_i++) {
                         cur_label = label_i;
                         if(type % 2 == 0)
@@ -319,8 +322,14 @@ public class SeqAnalyzer {
                     }
                 }
             } else {
-                Arrays.fill(start_feature_arr, 1.0);
-                Arrays.fill(trans_feature_arr, 1.0);
+                for(int arr_i = 0; arr_i < start_feature_arr.length; arr_i++) {
+                    start_feature_arr[arr_i] = Math.random();
+                }
+                for(int arr_i = 0; arr_i < trans_feature_arr.length; arr_i++) {
+                    trans_feature_arr[arr_i] = Math.random();
+                }
+//                Arrays.fill(start_feature_arr, 1.0);
+//                Arrays.fill(trans_feature_arr, 1.0);
                 for (int i = 0; i < m_labelNames.size(); i++) {
                     feature_idx = node_feature_size + 10 + i;
                     if(weights.containsKey(feature_idx))

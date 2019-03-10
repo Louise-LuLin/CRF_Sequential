@@ -47,7 +47,9 @@ public class Main {
 //        crfModel.activeLearning(String.format("%s/%s", para.m_prefix, para.m_source),
 //                para.m_iterMax, para.m_train_k, para.m_test_k, para.m_query_k, para.m_tuple_k, para.m_budget_k, para.m_model);
 //        crfModel.crossValidation(para.m_crossV, String.format("%s/%s", para.m_prefix, para.m_source), para.m_iterMax);
-        crfModel.oneFold(80, para.m_iterMax);
+
+        //parameters: train_end=30 or 80, test_start=80
+        crfModel.oneFold(80, 80, para.m_iterMax);
     }
 
 }

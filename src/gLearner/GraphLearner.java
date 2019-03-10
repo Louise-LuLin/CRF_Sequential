@@ -50,7 +50,7 @@ public class GraphLearner implements Maximizable.ByGradient{
     BufferedWriter m_writer;
 
     GraphLearner(ArrayList<String4Learning> traininglist){
-        m_infer = new LoopyBP(50);
+        m_infer = new LoopyBP(100);
 //        m_infer = new JunctionTreeInferencer();
 
         int featureDim = setTrainingSet(traininglist);
@@ -59,7 +59,7 @@ public class GraphLearner implements Maximizable.ByGradient{
         m_exptectations = new double[featureDim];
 
         //training parameters
-        m_scaling = false;
+        m_scaling = true;
         m_updated = true;
         m_trained = false;
         m_rand = new Random();
@@ -165,7 +165,7 @@ public class GraphLearner implements Maximizable.ByGradient{
         }
         m_oldLikelihood *= m_lambda/2;    //L2 penalty
 
-        double scale = m_scaling ? (1.0/m_trainSampleSet.size()) : 1.0;
+        double scale = m_scaling ? (1.0/(m_trainSampleSet.size()*m_trainSampleSet.size())) : 1.0;
         for(int stringID=0; stringID<m_trainGraphSet.size(); stringID++) {
             assign = m_trainAssignment.get(stringID);
             graph = m_trainGraphSet.get(stringID);
@@ -214,7 +214,7 @@ public class GraphLearner implements Maximizable.ByGradient{
             }
         }
 
-        double scale = m_scaling ? (1.0/m_trainSampleSet.size()) : 1.0;
+        double scale = m_scaling ? (1.0/(m_trainSampleSet.size()*m_trainSampleSet.size())) : 1.0;
         for(feaID=0; feaID<m_weights.length; feaID++){
             buffer[feaID] = scale * (m_constraints[feaID] - m_exptectations[feaID]) - (m_weights[feaID] * m_lambda);
 //            buffer[feaID] = scale * (m_constraints[feaID] - m_exptectations[feaID]);

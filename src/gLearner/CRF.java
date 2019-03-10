@@ -1,6 +1,7 @@
 package gLearner;
 
 //import edu.umass.cs.mallet.grmm.types.*;
+import cc.mallet.grmm.types.Factor;
 import cc.mallet.grmm.types.FactorGraph;
 import gLearner.GraphLearner;
 import gLearner.SeqAnalyzer;
@@ -444,22 +445,24 @@ public class CRF {
         }
     }
 
-    public void oneFold(int cut, int maxIter) {
+    public void oneFold(int train_end, int test_start, int maxIter) {
         double[] acc = new double[3];
 
         ArrayList<int[]> train_label = new ArrayList<>();
         ArrayList<String4Learning> training_data = new ArrayList<>();
+        ArrayList<String4Learning> tmp_data = new ArrayList<>();
 
         ArrayList<int[]> test_label = new ArrayList<>();
         ArrayList<Sequence> testing_seq = new ArrayList<>();
 
+
         Map<Integer, Double> weights = new TreeMap<>();
 
         for(int i = 0; i < m_seq.getStrings().size(); i++) {
-            if(i > cut) {
+            if(i > test_start) {
                 test_label.add(m_seq.getLabels().get(i));
                 testing_seq.add(m_seq.getSequences().get(i));
-            } else {
+            } else if (i < train_end) {
                 train_label.add(m_seq.getLabels().get(i));
                 training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(i), "train", weights));
             }
@@ -474,12 +477,26 @@ public class CRF {
         // Train
         long start = System.currentTimeMillis();
         ArrayList<ArrayList<Integer>> trainPrediction = m_graphLearner.doTraining(maxIter);
+        trainPrediction.clear();
+
+//        m_graphLearner.SaveWeights(String.format("%s/weights.txt", prefix));
+        weights = m_graphLearner.getWeights();
+
+        for(int i = 0; i < m_seq.getSequences().size(); i++) {
+            if (i < train_end) {
+                tmp_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(i), "test", weights));
+            }
+        }
+
+        for(int l = 0; l < tmp_data.size(); l++) {
+            FactorGraph tmpGraph = m_graphLearner.buildFactorGraphs_test(tmp_data.get(l));
+            trainPrediction.add(m_graphLearner.doTesting(tmpGraph));
+        }
         double acc_cur = calcAcc(train_label, trainPrediction)[0];
         System.out.format("cur train acc: %f\n", acc_cur);
 
-//            m_graphLearner.SaveWeights(String.format("%s/weights.txt", prefix));
-        weights = m_graphLearner.getWeights();
 
+        m_graphLearner.SaveWeights("./data/weights.txt");
         // Apply the trained model to the test set.
         ArrayList<ArrayList<Integer>> testPrediction = new ArrayList<>();
         ArrayList<ArrayList<Integer>> testTmp = new ArrayList<>();
@@ -502,12 +519,14 @@ public class CRF {
             if(acc_tmp[0] < 0.8) {
                 System.out.format("===== bad =====\n");
                 System.out.format("Token: %s\n", seq.getContent());
-            }
-            if(acc_tmp[0] > 0.95) {
+            } else if(acc_tmp[0] > 0.95) {
                 System.out.format("===== good =====\n");
                 System.out.format("Token: %s\n", seq.getContent());
+            } else {
+                System.out.format("===== medium =====\n");
+                System.out.format("Token: %s\n", seq.getContent());
             }
-            if(acc_tmp[0] < 0.8 || acc_tmp[0] > 0.95) {
+            if(acc_tmp[0] < 0.96 || acc_tmp[0] > 0.95) {
                 System.out.format("True: ");
                 int[] labels = seq.getLabels();
                 for(int a = 0; a < labels.length; a++)
@@ -523,7 +542,7 @@ public class CRF {
 //                        pred_tmp.get(0), pred_tmp.get(1), pred_tmp.get(2), pred_tmp.get(3), pred_tmp.get(4));
         }
         acc = calcAcc(test_label, testPrediction);
-        System.out.format("[Stat]Train/test finished in %.2f seconds: acc_all = %.2f, acc_phrase = %.2f, acc_out = %.2f\n",
+        System.out.format("[Stat]Train/test finished in %.2f seconds: acc_all = %.4f, acc_phrase = %.4f, acc_out = %.4f\n",
                 (System.currentTimeMillis()-start)/1000.0, acc[0], acc[1], acc[2]);
     }
 
