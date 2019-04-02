@@ -147,7 +147,7 @@ public class CRF {
         double TP = 0, TPFN = 0, TPFP = 0, TP_accumulate = 0, TPFP_accumulate = 0, TPFN_accumulate = 0;
         for(int i = 0 ; i < query_k; i++){
 
-            if(i%1 == 0) {
+            if(i == 0) {
 
                 System.out.format("==========\n[Info]Active query %d samples: train size = %d, test size = %d...\n",
                         i, training_data.size(), testing_seq.size());
@@ -213,6 +213,8 @@ public class CRF {
                 int uncertain_j = 0;
                 FactorGraph tmpGraph, targetGraph = new FactorGraph();
                 double tmpConficence;
+                ArrayList<Double> confis = new ArrayList<>();
+                ArrayList<FactorGraph> graphs = new ArrayList<>();
                 ArrayList<Integer> targetPred = new ArrayList<>();
 
                 for(int j = 0; j < candidate_idx.size(); j++){
@@ -224,13 +226,34 @@ public class CRF {
                         uncertain_j = j;
                         targetGraph = tmpGraph;
                     }
+
+                    confis.add(tmpConficence);
+                    graphs.add(tmpGraph);
                 }
 
-                System.out.format("seq %d's confidence: %f\n",
-                        candidate_idx.get(uncertain_j), min);
+                double min2 = Double.MAX_VALUE;
+                int uncertain_j2 = 0;
+                FactorGraph targetGraph2 = new FactorGraph();
+                for(int j = 0; j < confis.size(); j++){
+                    if (j == uncertain_j)
+                        continue;
+                    if(confis.get(j) < min2){
+                        min2 = confis.get(j);
+                        uncertain_j2 = j;
+                        targetGraph2 = graphs.get(j);
+                    }
+                }
+
+                System.out.format("seq %d's confidence: %f, %d's confidence: %f\n",
+                        candidate_idx.get(uncertain_j), min, candidate_idx.get(uncertain_j2), min2);
 
                 targetPred = m_graphLearner.doTesting(targetGraph);
-                System.out.println("pred: " + Arrays.toString(targetPred.toArray()));
+                System.out.println("pred1: " + Arrays.toString(targetPred.toArray()));
+
+                ArrayList<Integer> targetPred2 = new ArrayList<>();
+                targetPred2 = m_graphLearner.doTesting(targetGraph2);
+                System.out.println("pred2: " + Arrays.toString(targetPred2.toArray()));
+
 
                 //use model's prediction with true subsequence
                 int[] true_label = m_seq.getLabels().get(candidate_idx.get(uncertain_j));

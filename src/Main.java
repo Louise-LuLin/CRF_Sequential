@@ -11,20 +11,20 @@ public class Main {
         /***** experiment setting *****/
 
         /***** data setting *****/
-//        String strPath = String.format("%s/%s/%s_string.txt", para.m_prefix, para.m_source, para.m_source);
-//        String lblPath = String.format("%s/%s/%s_label.txt", para.m_prefix, para.m_source, para.m_source);
+        String strPath = String.format("%s/%s/%s_string.txt", para.m_prefix, para.m_source, para.m_source);
+        String lblPath = String.format("%s/%s/%s_label.txt", para.m_prefix, para.m_source, para.m_source);
         String tkNamePath = String.format("%s/%s/tokenName.txt", para.m_prefix, para.m_source);
         String lbNamePath = String.format("%s/%s/labelName.txt", para.m_prefix, para.m_source);
 
-        String strPath = String.format("%s/%s/train_string.txt", para.m_prefix, para.m_source);
-        String lblPath = String.format("%s/%s/train_label.txt", para.m_prefix, para.m_source);
-        String strPath_test = String.format("%s/%s/test_string.txt", para.m_prefix, para.m_source);
-        String lblPath_test = String.format("%s/%s/test_label.txt", para.m_prefix, para.m_source);
+//        String strPath = String.format("%s/%s/train_string.txt", para.m_prefix, para.m_source);
+//        String lblPath = String.format("%s/%s/train_label.txt", para.m_prefix, para.m_source);
+//        String strPath_test = String.format("%s/%s/test_string.txt", para.m_prefix, para.m_source);
+//        String lblPath_test = String.format("%s/%s/test_label.txt", para.m_prefix, para.m_source);
 
         /**** load string and label data ****/
         SeqAnalyzer seqAnalyzer = new SeqAnalyzer(para.m_source);
         seqAnalyzer.loadSequence(strPath, lblPath, para.m_samplesize, "new");
-        seqAnalyzer.loadSequence(strPath_test, lblPath_test, para.m_samplesize, "concatenate");
+//        seqAnalyzer.loadSequence(strPath_test, lblPath_test, para.m_samplesize, "concatenate");
         seqAnalyzer.saveTokenNames(tkNamePath);
         seqAnalyzer.saveLabelNames(lbNamePath);
 
@@ -44,12 +44,12 @@ public class Main {
 
 
         CRF crfModel = new CRF(seqAnalyzer);
-//        crfModel.activeLearning(String.format("%s/%s", para.m_prefix, para.m_source),
-//                para.m_iterMax, para.m_train_k, para.m_test_k, para.m_query_k, para.m_tuple_k, para.m_budget_k, para.m_model);
+        crfModel.activeLearning(String.format("%s/%s", para.m_prefix, para.m_source),
+                para.m_iterMax, para.m_train_k, para.m_test_k, para.m_query_k, para.m_tuple_k, para.m_budget_k, para.m_model);
 //        crfModel.crossValidation(para.m_crossV, String.format("%s/%s", para.m_prefix, para.m_source), para.m_iterMax);
 
         //parameters: train_end=30 or 80, test_start=80
-        crfModel.oneFold(80, 80, para.m_iterMax);
+//        crfModel.oneFold(80, 80, para.m_iterMax);
     }
 
 }
