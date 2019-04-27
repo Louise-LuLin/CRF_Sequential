@@ -103,16 +103,19 @@ public class CRF {
 
 
 
-    public void activeLearning(String prefix, int maxIter, int train_k, int test_k,
-                               int query_k, int tuple_k, int budget_k, String model){
+    public void activeLearning(ArrayList<Sequence> sequences, int train_k, int candi_k, int test_k,
+                               String prefix, int maxIter, int tuple_k, int budget_k, String model){
         //get train and test index
-        m_seq.genTrainTestIdx(prefix, train_k, test_k);
-        ArrayList<Integer> train_idx = m_seq.loadIdx(prefix, "train", train_k);
-        ArrayList<Integer> test_idx = m_seq.loadIdx(prefix, "test", test_k);
-        ArrayList<Integer> candidate_idx = m_seq.loadIdx(prefix, "candidate",
-                m_seq.getStrings().size() - train_k - test_k);
-        System.out.format("[Info]Initial: train_size=%d, test_size=%d, candidate_size=%d\n",
-                train_idx.size(), test_idx.size(), candidate_idx.size());
+//        m_seq.genTrainTestIdx(prefix, train_k, test_k);
+//        ArrayList<Integer> train_idx = m_seq.loadIdx(prefix, "train", train_k);
+//        ArrayList<Integer> test_idx = m_seq.loadIdx(prefix, "test", test_k);
+//        ArrayList<Integer> candidate_idx = m_seq.loadIdx(prefix, "candidate",
+//                m_seq.getStrings().size() - train_k - test_k);
+        System.out.format("CRF START active learning with tuple=%d, budget=%d, model=%s...\n", tuple_k, budget_k, model);
+
+        ArrayList<Sequence> train_seqs = new ArrayList<>(sequences.subList(0, train_k));
+        ArrayList<Sequence> candi_seqs = new ArrayList<>(sequences.subList(train_k, train_k + candi_k));
+        ArrayList<Sequence> test_seqs = new ArrayList<>(sequences.subList(sequences.size() - test_k, sequences.size()));
 
         //initial train and test
         Map<Integer, Double> weights = new TreeMap<>();
@@ -122,93 +125,104 @@ public class CRF {
         ArrayList<String4Learning> training_data = new ArrayList<>();
         ArrayList<Sequence> trace_samples = new ArrayList<>();
 
-        for(int i = 0; i < train_idx.size(); i++){
-            train_label.add(m_seq.getLabels().get(train_idx.get(i)));
-            pred_label.add(m_seq.getLabels().get(train_idx.get(i)));
-            training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(train_idx.get(i)), "train", weights));
-            trace_samples.add(m_seq.getSequences().get(train_idx.get(i)));
+//        for(int i = 0; i < train_idx.size(); i++){
+//            train_label.add(m_seq.getLabels().get(train_idx.get(i)));
+//            pred_label.add(m_seq.getLabels().get(train_idx.get(i)));
+//            training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(train_idx.get(i)), "train", weights));
+//            trace_samples.add(m_seq.getSequences().get(train_idx.get(i)));
+//        }
+//
+//        ArrayList<int[]> test_label = new ArrayList<>();
+//        ArrayList<Sequence> testing_seq = new ArrayList<>();
+//        for(int i = 0; i < test_idx.size(); i++){
+//            test_label.add(m_seq.getLabels().get(test_idx.get(i)));
+//            testing_seq.add(m_seq.getSequences().get(test_idx.get(i)));
+//        }
+
+        for(Sequence seq : train_seqs){
+            train_label.add(seq.getLabelIDs());
+            pred_label.add(seq.getLabelIDs());
+            training_data.add(m_seq.getStr4Learning(seq, "train", weights));
+            trace_samples.add(seq);
         }
 
         ArrayList<int[]> test_label = new ArrayList<>();
         ArrayList<Sequence> testing_seq = new ArrayList<>();
-        for(int i = 0; i < test_idx.size(); i++){
-            test_label.add(m_seq.getLabels().get(test_idx.get(i)));
-            testing_seq.add(m_seq.getSequences().get(test_idx.get(i)));
+        for(Sequence seq : test_seqs){
+            test_label.add(seq.getLabelIDs());
+            testing_seq.add(seq);
         }
 
-        //active learning
-        double[] acc;
-        GraphLearner m_graphLearner = null;
-
-        ArrayList<Integer> samplesize_list = new ArrayList<>();
+        // to record results
+        ArrayList<Integer> costs = new ArrayList<>();
         ArrayList<Double> acc_all_list = new ArrayList<>();
         ArrayList<Double> acc_phrase_list = new ArrayList<>();
         ArrayList<Double> acc_out_list = new ArrayList<>();
+        ArrayList<String[]> tokens = new ArrayList<>();
+        ArrayList<String[]> labels = new ArrayList<>();
+        ArrayList<String[]> pred1_labels = new ArrayList<>();
+
+        //active learning
+        GraphLearner m_graphLearner = null;
         double TP = 0, TPFN = 0, TPFP = 0, TP_accumulate = 0, TPFP_accumulate = 0, TPFN_accumulate = 0;
-        for(int i = 0 ; i < query_k; i++){
+        for(int count = 14 * train_k; count <= budget_k; count += tuple_k){
 
-            if(i == 0) {
 
-                System.out.format("==========\n[Info]Active query %d samples: train size = %d, test size = %d...\n",
-                        i, training_data.size(), testing_seq.size());
+            System.out.format("==========\n[Info]Cost %d in %d bugdet...\n", count, budget_k);
 
-                // Build up a graph learner and train it using training data.
-                m_graphLearner = new GraphLearner(training_data);
+            // Build up a graph learner and train it using training data.
+            m_graphLearner = new GraphLearner(training_data);
 
-                // Train
-                long start = System.currentTimeMillis();
-                ArrayList<ArrayList<Integer>> trainPrediction = m_graphLearner.doTraining(maxIter);
-                double acc_cur = calcAcc(train_label, trainPrediction)[0];
-                System.out.format("[Info]cur train acc: %f\n", acc_cur);
+            // Train
+            long start = System.currentTimeMillis();
+            ArrayList<ArrayList<Integer>> trainPrediction = m_graphLearner.doTraining(maxIter);
+            double acc_cur = calcAcc(train_label, trainPrediction)[0];
+            System.out.format("[Info]cur train acc: %f\n", acc_cur);
 
-                weights = m_graphLearner.getWeights();
+            weights = m_graphLearner.getWeights();
 
-                // Apply the trained model to the test set.
-                ArrayList<ArrayList<Integer>> testPrediction = new ArrayList<>();
-                ArrayList<Integer> pred_tmp;
-                FactorGraph testGraph;
-                int j = 0;
-                for (int l = 0; l < testing_seq.size(); l++) {
-                    Sequence seq = testing_seq.get(l);
-                    testGraph = m_graphLearner.buildFactorGraphs_test(m_seq.getStr4Learning(seq, "test", weights));
-                    pred_tmp = m_graphLearner.doTesting(testGraph);
-
-                    testPrediction.add(pred_tmp);
-                }
-                acc = calcAcc(test_label, testPrediction);
-
-                System.out.format("[Stat]Train/test finished in %.2f seconds: acc_all = %.2f, acc_phrase = %.2f, acc_out = %.2f\n",
-                        (System.currentTimeMillis() - start) / 1000.0, acc[0], acc[1], acc[2]);
-                samplesize_list.add(training_data.size());
-                acc_all_list.add(acc[0]);
-                acc_phrase_list.add(acc[1]);
-                acc_out_list.add(acc[2]);
-
-                TP_accumulate += TP;
-                TPFP_accumulate += TPFP;
-                TPFN_accumulate += TPFN;
-                double prec_current = TPFP > 0? TP/TPFP : -1;
-                double prec_accumulate = TPFP_accumulate > 0? TP_accumulate/TPFP_accumulate : -1;
-                double recall_current = TPFN > 0? TP/TPFN : -1;
-                double recall_accumulate = TPFN_accumulate > 0? TP_accumulate / TPFN_accumulate : -1;
-                System.out.format("[Stat]hitting rate: current_precision = %f, accumulate_precision = %f, " +
-                                "current_recall = %f, accumulate_recall = %f\n",
-                        prec_current, prec_accumulate, recall_current, recall_accumulate);
-                TP = 0;
-                TPFP = 0;
-                TPFN = 0;
+            // Apply the trained model to the test set.
+            ArrayList<ArrayList<Integer>> testPrediction = new ArrayList<>();
+            ArrayList<Integer> pred_tmp;
+            FactorGraph testGraph;
+            for (int l = 0; l < testing_seq.size(); l++) {
+                Sequence seq = testing_seq.get(l);
+                testGraph = m_graphLearner.buildFactorGraphs_test(m_seq.getStr4Learning(seq, "test", weights));
+                pred_tmp = m_graphLearner.doTesting(testGraph);
+                testPrediction.add(pred_tmp);
             }
+            double[] acc = calcAcc(test_label, testPrediction);
 
+            System.out.format("[Stat]Train/test finished in %.2f seconds: acc_all = %.2f, acc_phrase = %.2f, acc_out = %.2f\n",
+                    (System.currentTimeMillis() - start) / 1000.0, acc[0], acc[1], acc[2]);
+            acc_all_list.add(acc[0]);
+            acc_phrase_list.add(acc[1]);
+            acc_out_list.add(acc[2]);
+            costs.add(count);
 
-            if(tuple_k == 0){//choose a random one
+            TP_accumulate += TP;
+            TPFP_accumulate += TPFP;
+            TPFN_accumulate += TPFN;
+            double prec_current = TPFP > 0? TP/TPFP : -1;
+            double prec_accumulate = TPFP_accumulate > 0? TP_accumulate/TPFP_accumulate : -1;
+            double recall_current = TPFN > 0? TP/TPFN : -1;
+            double recall_accumulate = TPFN_accumulate > 0? TP_accumulate / TPFN_accumulate : -1;
+            System.out.format("[Stat]hitting rate: current_precision = %f, accumulate_precision = %f, " +
+                            "current_recall = %f, accumulate_recall = %f\n",
+                    prec_current, prec_accumulate, recall_current, recall_accumulate);
+            TP = 0;
+            TPFP = 0;
+            TPFN = 0;
+
+            // begin query
+            if(tuple_k == 0){//choose a random whole sequence
                 Random r = new Random();
-                int random_j = r.nextInt(candidate_idx.size());
-                train_label.add(m_seq.getLabels().get(candidate_idx.get(random_j)));
-                training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(candidate_idx.get(random_j)), "train", weights));
-                candidate_idx.remove(random_j);
-                trace_samples.add(m_seq.getSequences().get(candidate_idx.get(random_j)));
-            } else if(tuple_k >= 50){//choose the one with minimum confidence
-                System.out.format("-- query %d with tuple_k=%d\n", i, tuple_k);
+                int random_j = r.nextInt(candi_seqs.size());
+                train_label.add(candi_seqs.get(random_j).getLabelIDs());
+                training_data.add(m_seq.getStr4Learning(candi_seqs.get(random_j), "train", weights));
+                candi_seqs.remove(random_j);
+                trace_samples.add(candi_seqs.get(random_j));
+            } else if(tuple_k >= 50){//choose whole sequence with minimum confidence
                 double min = Double.MAX_VALUE;
                 int uncertain_j = 0;
                 FactorGraph tmpGraph, targetGraph = new FactorGraph();
@@ -217,8 +231,8 @@ public class CRF {
                 ArrayList<FactorGraph> graphs = new ArrayList<>();
                 ArrayList<Integer> targetPred = new ArrayList<>();
 
-                for(int j = 0; j < candidate_idx.size(); j++){
-                    Sequence seq = m_seq.getSequences().get(candidate_idx.get(j));
+                for(int j = 0; j < candi_seqs.size(); j++){
+                    Sequence seq = candi_seqs.get(j);
                     tmpGraph = m_graphLearner.buildFactorGraphs_test(m_seq.getStr4Learning(seq, "test", weights));
                     tmpConficence = m_graphLearner.calcConfidence(tmpGraph);
                     if(tmpConficence < min){
@@ -231,40 +245,20 @@ public class CRF {
                     graphs.add(tmpGraph);
                 }
 
-                double min2 = Double.MAX_VALUE;
-                int uncertain_j2 = 0;
-                FactorGraph targetGraph2 = new FactorGraph();
-                for(int j = 0; j < confis.size(); j++){
-                    if (j == uncertain_j)
-                        continue;
-                    if(confis.get(j) < min2){
-                        min2 = confis.get(j);
-                        uncertain_j2 = j;
-                        targetGraph2 = graphs.get(j);
-                    }
-                }
-
-                System.out.format("seq %d's confidence: %f, %d's confidence: %f\n",
-                        candidate_idx.get(uncertain_j), min, candidate_idx.get(uncertain_j2), min2);
+                System.out.format("seq's confidence: %f\n", min);
 
                 targetPred = m_graphLearner.doTesting(targetGraph);
-                System.out.println("pred1: " + Arrays.toString(targetPred.toArray()));
-
-                ArrayList<Integer> targetPred2 = new ArrayList<>();
-                targetPred2 = m_graphLearner.doTesting(targetGraph2);
-                System.out.println("pred2: " + Arrays.toString(targetPred2.toArray()));
-
+                System.out.println("pred: " + Arrays.toString(targetPred.toArray()));
 
                 //use model's prediction with true subsequence
-                int[] true_label = m_seq.getLabels().get(candidate_idx.get(uncertain_j));
+                int[] true_label = candi_seqs.get(uncertain_j).getLabelIDs();
                 System.out.println("true: " + Arrays.toString(true_label));
 
-                train_label.add(m_seq.getLabels().get(candidate_idx.get(uncertain_j)));
-                training_data.add(m_seq.getStr4Learning(m_seq.getSequences().get(candidate_idx.get(uncertain_j)), "train", weights));
-                candidate_idx.remove(uncertain_j);
-                trace_samples.add(m_seq.getSequences().get(candidate_idx.get(uncertain_j)));
+                train_label.add(candi_seqs.get(uncertain_j).getLabelIDs());
+                training_data.add(m_seq.getStr4Learning(candi_seqs.get(uncertain_j), "train", weights));
+                candi_seqs.remove(uncertain_j);
+                trace_samples.add(candi_seqs.get(uncertain_j));
             } else {//choose sub sequence
-                System.out.format("-- query %d with tuple_k=%d\n", i, tuple_k);
                 double min = Double.MAX_VALUE;
                 int uncertain_j = 0, uncertain_k=0;
                 FactorGraph tmpGraph, targetGraph = new FactorGraph();
@@ -274,8 +268,8 @@ public class CRF {
                 ArrayList<Integer> targetPred = new ArrayList<>();
 
                 // first find the sequence with least confidence
-                for(int j = 0; j < candidate_idx.size(); j++) {
-                    Sequence seq = m_seq.getSequences().get(candidate_idx.get(j));
+                for(int j = 0; j < candi_seqs.size(); j++) {
+                    Sequence seq = candi_seqs.get(j);
                     tmpGraph = m_graphLearner.buildFactorGraphs_test(m_seq.getStr4Learning(seq, "test", weights));
 
                     tmpConficence = m_graphLearner.calcConfidence(tmpGraph);
@@ -286,8 +280,7 @@ public class CRF {
                     }
                 }
 
-                System.out.format("seq %d's confidence: %f\n",
-                        candidate_idx.get(uncertain_j), min);
+                System.out.format("seq's confidence: %f\n", min);
 
                 targetPred.clear();
                 tuple_confidence = m_graphLearner.calcTupleUncertainty(targetGraph, targetPred, tuple_k, model);
@@ -337,7 +330,7 @@ public class CRF {
                 System.out.println("pred: " + Arrays.toString(targetPred.toArray()));
 
                 //use model's prediction with true subsequence
-                int[] true_label = m_seq.getLabels().get(candidate_idx.get(uncertain_j));
+                int[] true_label = candi_seqs.get(uncertain_j).getLabelIDs();
                 System.out.println("true: " + Arrays.toString(true_label));
 
                 int[] query_label = new int[targetPred.size()];
@@ -359,7 +352,7 @@ public class CRF {
 
                 train_label.add(true_label);
                 pred_label.add(predict_label);
-                Sequence query_seq = m_seq.getSequences().get(candidate_idx.get(uncertain_j));
+                Sequence query_seq = candi_seqs.get(uncertain_j);
                 query_seq.setLabelIDs(query_label);
                 System.out.println("2trn: " + Arrays.toString(query_seq.getLabelIDs()));
                 training_data.add(m_seq.getStr4Learning(query_seq, "train", weights));
@@ -369,97 +362,71 @@ public class CRF {
 //                        "train", weights));
 
                 //use only true subsequence
-                candidate_idx.remove(uncertain_j);
+                candi_seqs.remove(uncertain_j);
                 trace_samples.add(query_seq);
             }
         }
 
         //output result
-        prefix = String.format("%s_train%d_test%d_candi%d_tuple%d_budget%d_%s",
-                prefix, train_k, test_k, m_seq.getStrings().size() - train_k - test_k, tuple_k, budget_k, model);
+        prefix = String.format("%s_CRF_train%d_tuple%d_%s", prefix, train_k, tuple_k, model);
         File acc_all_file = new File(String.format("%s_all.txt", prefix));
         File acc_phrase_file = new File(String.format("%s_phrase.txt", prefix));
         File acc_out_file = new File(String.format("%s_out.txt", prefix));
-        File train_string_file = new File(String.format("%s_train_string.txt", prefix));
-        File train_label_file = new File(String.format("%s_train_label.txt", prefix));
-        File train_label_true_file = new File(String.format("%s_train_label_true.txt", prefix));
-        File train_label_pred_file = new File(String.format("%s_train_label_pred.txt", prefix));
-        File test_string_file = new File(String.format("%s_test_string.txt", prefix));
-        File test_label_file = new File(String.format("%s_test_label.txt", prefix));
+        File check_file = new File(String.format("%s_check.txt", prefix));
         try{
             BufferedWriter writer = new BufferedWriter(new FileWriter(acc_all_file));
             //print indexes
-            writer.write("acc,samplesize\n");
-            for(int i = 0; i < samplesize_list.size(); i++)
-                writer.write(String.format("%f,%d\n", acc_all_list.get(i), samplesize_list.get(i)));
+            writer.write("cost,acc\n");
+            for(int i = 0; i < costs.size(); i++)
+                writer.write(String.format("%d,%f\n", costs.get(i), acc_all_list.get(i)));
             writer.close();
 
             writer = new BufferedWriter((new FileWriter(acc_phrase_file)));
-            writer.write("acc,samplesize\n");
-            for(int i = 0; i < samplesize_list.size(); i++)
-                writer.write(String.format("%f,%d\n", acc_phrase_list.get(i), samplesize_list.get(i)));
+            writer.write("cost,acc\n");
+            for(int i = 0; i < costs.size(); i++)
+                writer.write(String.format("%d,%f\n", costs.get(i), acc_phrase_list.get(i)));
             writer.close();
 
             writer = new BufferedWriter((new FileWriter(acc_out_file)));
-            writer.write("acc,samplesize\n");
-            for(int i = 0; i < samplesize_list.size(); i++)
-                writer.write(String.format("%f,%d\n", acc_out_list.get(i), samplesize_list.get(i)));
+            writer.write("cost,acc\n");
+            for(int i = 0; i < costs.size(); i++)
+                writer.write(String.format("%d,%f\n", costs.get(i), acc_out_list.get(i)));
             writer.close();
 
-            writer = new BufferedWriter((new FileWriter(train_string_file)));
-            for(int i = 0; i < trace_samples.size(); i++) {
-                writer.write(trace_samples.get(i).getContent());
-                writer.write("\n");
-            }
-            writer.close();
+//            File checkfile = new File(String.format("%s_check.txt", prefix));
+//            writer = new BufferedWriter(new FileWriter(checkfile));
+//            for(int i = 0; i < tokens.size(); i++) {
+//                writer.write(String.format("%d th query with %d positions:\n", i, tuple_k));
+//                writer.write(String.format("tokens: %s\n", Arrays.toString(tokens.get(i))));
+//                writer.write(String.format("labels: %s\n", Arrays.toString(labels.get(i))));
+//                writer.write(String.format("Pred_1: %s\n", Arrays.toString(pred1_labels.get(i))));
+////                writer.write(String.format("Pred_2: %s\n", Arrays.toString(pred2_labels.get(i))));
+//                writer.write("\n");
+//            }
+//            writer.close();
 
-            writer = new BufferedWriter((new FileWriter(train_label_file)));
-            for(int i = 0; i < trace_samples.size(); i++) {
-                int[] label_idxs = trace_samples.get(i).getLabelIDs();
-                writer.write(m_seq.getLabelName(label_idxs[0]));
-                for(int j = 1; j < label_idxs.length; j++) {
-                    writer.write(String.format(",%s", m_seq.getLabelName(label_idxs[j])));
+            writer = new BufferedWriter((new FileWriter(check_file)));
+            for(int i = train_k; i < trace_samples.size(); i++) {
+                writer.write("token: " + trace_samples.get(i).getContent() + "\n");
+
+                writer.write("true: ");
+                for(Integer id : train_label.get(i)) {
+                    writer.write(String.format("%s,", m_seq.getLabelName(id)));
                 }
                 writer.write("\n");
-            }
-            writer.close();
 
-            writer = new BufferedWriter((new FileWriter(test_string_file)));
-            for(int i = 0; i < testing_seq.size(); i++) {
-                writer.write(testing_seq.get(i).getContent());
-                writer.write("\n");
-            }
-            writer.close();
-
-            writer = new BufferedWriter((new FileWriter(test_label_file)));
-            for(int i = 0; i < testing_seq.size(); i++) {
-                int[] label_idxs = testing_seq.get(i).getLabelIDs();
-                writer.write(m_seq.getLabelName(label_idxs[0]));
-                for(int j = 1; j < label_idxs.length; j++) {
-                    writer.write(String.format(",%s", m_seq.getLabelName(label_idxs[j])));
+                writer.write("pred: ");
+                for(Integer id : pred_label.get(i)) {
+                    writer.write(String.format("%s,", m_seq.getLabelName(id)));
                 }
                 writer.write("\n");
-            }
-            writer.close();
 
-            writer = new BufferedWriter((new FileWriter(train_label_pred_file)));
-            for(int i = 0; i < pred_label.size(); i++) {
-                int[] label_idxs = pred_label.get(i);
-                writer.write(m_seq.getLabelName(label_idxs[0]));
-                for(int j = 1; j < label_idxs.length; j++) {
-                    writer.write(String.format(",%s", m_seq.getLabelName(label_idxs[j])));
+                writer.write("quer: ");
+                for(String lbl : trace_samples.get(i).getLabels()) {
+                    writer.write(String.format("%s,", lbl));
                 }
                 writer.write("\n");
-            }
-            writer.close();
 
-            writer = new BufferedWriter((new FileWriter(train_label_true_file)));
-            for(int i = 0; i < train_label.size(); i++) {
-                int[] label_idxs = train_label.get(i);
-                writer.write(m_seq.getLabelName(label_idxs[0]));
-                for(int j = 1; j < label_idxs.length; j++) {
-                    writer.write(String.format(",%s", m_seq.getLabelName(label_idxs[j])));
-                }
                 writer.write("\n");
             }
             writer.close();

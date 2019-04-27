@@ -75,7 +75,7 @@ public class HMM {
 
         // train HMM using MLE
         train(train_seqs, 2, 0.3, 0.1);
-        costs.add(0);
+        costs.add(14 * train_k);
         accs.add(test(test_seqs));
 
         for(int count = tuple_k; count <= budget_k; count += tuple_k){
