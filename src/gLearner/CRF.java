@@ -360,8 +360,8 @@ public class CRF {
                 train_label.add(true_label);
                 pred_label.add(predict_label);
                 Sequence query_seq = m_seq.getSequences().get(candidate_idx.get(uncertain_j));
-                query_seq.setLabels(query_label);
-                System.out.println("2trn: " + Arrays.toString(query_seq.getLabels()));
+                query_seq.setLabelIDs(query_label);
+                System.out.println("2trn: " + Arrays.toString(query_seq.getLabelIDs()));
                 training_data.add(m_seq.getStr4Learning(query_seq, "train", weights));
 
 //                train_label.add(Arrays.copyOfRange(m_seq.getLabels().get(candidate_idx.get(uncertain_j)), uncertain_k, tuple_k));
@@ -415,7 +415,7 @@ public class CRF {
 
             writer = new BufferedWriter((new FileWriter(train_label_file)));
             for(int i = 0; i < trace_samples.size(); i++) {
-                int[] label_idxs = trace_samples.get(i).getLabels();
+                int[] label_idxs = trace_samples.get(i).getLabelIDs();
                 writer.write(m_seq.getLabelName(label_idxs[0]));
                 for(int j = 1; j < label_idxs.length; j++) {
                     writer.write(String.format(",%s", m_seq.getLabelName(label_idxs[j])));
@@ -433,7 +433,7 @@ public class CRF {
 
             writer = new BufferedWriter((new FileWriter(test_label_file)));
             for(int i = 0; i < testing_seq.size(); i++) {
-                int[] label_idxs = testing_seq.get(i).getLabels();
+                int[] label_idxs = testing_seq.get(i).getLabelIDs();
                 writer.write(m_seq.getLabelName(label_idxs[0]));
                 for(int j = 1; j < label_idxs.length; j++) {
                     writer.write(String.format(",%s", m_seq.getLabelName(label_idxs[j])));
@@ -551,7 +551,7 @@ public class CRF {
             }
             if(acc_tmp[0] < 0.96 || acc_tmp[0] > 0.95) {
                 System.out.format("True: ");
-                int[] labels = seq.getLabels();
+                int[] labels = seq.getLabelIDs();
                 for(int a = 0; a < labels.length; a++)
                     System.out.format("%s,", m_seq.getLabelNames().get(labels[a]));
                 System.out.format("\n");
@@ -643,7 +643,7 @@ public class CRF {
                 }
                 if(acc_tmp[0] < 0.8 || acc_tmp[0] > 0.95) {
                     System.out.format("True: ");
-                    int[] labels = seq.getLabels();
+                    int[] labels = seq.getLabelIDs();
                     for(int a = 0; a < labels.length; a++)
                         System.out.format("%s,", m_seq.getLabelNames().get(labels[a]));
                     System.out.format("\n");

@@ -12,15 +12,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
-//import edu.umass.cs.mallet.base.types.Matrix;
-//import edu.umass.cs.mallet.base.types.SparseMatrixn;
-//import edu.umass.cs.mallet.grmm.types.Factor;
-//import edu.umass.cs.mallet.grmm.types.LogTableFactor;
-//import edu.umass.cs.mallet.grmm.types.Variable;
-
-public class SeqAnalyzer {
+public class SeqAnalyzer_back {
     private String m_source;
-    
+
     private ArrayList<String> m_labelNames;//text content of the labels Y
     private HashMap<String, Integer> m_labelNameIndex;//index of the labels Y
 
@@ -32,15 +26,15 @@ public class SeqAnalyzer {
 
     private Map<Integer, Boolean> m_mask;
 
-    public SeqAnalyzer(String source){
+    public SeqAnalyzer_back(String source){
         this.m_source = source;
-        
+
         m_labelNames = new ArrayList<String>();
         m_labelNameIndex = new HashMap<String, Integer>();
-        
+
         m_tokenNames = new ArrayList<String>();
         m_tokenNameIndex = new HashMap<String, Integer>();
-        
+
         m_seqList = new ArrayList<Sequence>();
         m_mask = null;
     }
@@ -55,31 +49,31 @@ public class SeqAnalyzer {
 
     public HashMap<String, Integer> getLabelNameIndex(){ return this.m_labelNameIndex; }
 
-    public ArrayList<String> getStrings(){ 
-    	ArrayList<String> strList = new ArrayList<String>();
-    	
-    	for(Sequence seq:m_seqList) 
-    		strList.add(seq.m_content);
-    			
-    	return strList; 
+    public ArrayList<String> getStrings(){
+        ArrayList<String> strList = new ArrayList<String>();
+
+        for(Sequence seq:m_seqList)
+            strList.add(seq.m_content);
+
+        return strList;
     }
 
-    public ArrayList<int[]> getLabels() { 
-    	ArrayList<int[]> labelList = new ArrayList<int[]>();
-    	
-    	for(Sequence seq:m_seqList)
-    		labelList.add(seq.getLabelIDs());
-    	
-    	return labelList; 
+    public ArrayList<int[]> getLabels() {
+        ArrayList<int[]> labelList = new ArrayList<int[]>();
+
+        for(Sequence seq:m_seqList)
+            labelList.add(seq.getLabelIDs());
+
+        return labelList;
     }
 
     public ArrayList<int[]> getTokens() {
-    	ArrayList<int[]> tokenList = new ArrayList<int[]>();
-    	
-    	for(Sequence seq:m_seqList)
-    		tokenList.add(seq.getTokenIDs());
-    	
-    	return tokenList;
+        ArrayList<int[]> tokenList = new ArrayList<int[]>();
+
+        for(Sequence seq:m_seqList)
+            tokenList.add(seq.getTokenIDs());
+
+        return tokenList;
     }
 
     public ArrayList<Sequence> getSequences() { return this.m_seqList; }
@@ -108,20 +102,20 @@ public class SeqAnalyzer {
 
     public void loadSequence(String stringPath, String labelPath, int maxNum, String mode){
         if(mode.equals("new"))
-    	    m_seqList.clear();
-    	
+            m_seqList.clear();
+
         // Read training strings.
         try {
             BufferedReader br = new BufferedReader(new FileReader(stringPath));
             BufferedReader br2 = new BufferedReader(new FileReader(labelPath));
             String line, line2, token;
             String[] labels;
-            
+
             while ((line = br.readLine()) != null && line.length() > 0) {
-            	Sequence seq = new Sequence(line);
+                Sequence seq = new Sequence(line);
                 int idx;
                 for(int i = 0 ; i < line.length(); i++){
-                	token = Character.toString(line.charAt(i));
+                    token = Character.toString(line.charAt(i));
                     idx = getTokenIndex(token); //dynamically expand tokenNames: each char to string
                     seq.addToken(token, idx);
                 }
@@ -271,14 +265,11 @@ public class SeqAnalyzer {
                                 m_labelNames.size() * (type / 2) + cur_label);
                     }
                 } else {//test
-                    for(int arr_i = 0; arr_i < feature_value_arr.length; arr_i++) {
-                        feature_value_arr[arr_i] = Math.random();
-                    }
                     for(int label_i = 0; label_i < m_labelNames.size(); label_i++) {
                         cur_label = label_i;
                         if(type % 2 == 0)
                             feature_idx = (m_tokenNames.size() * m_labelNames.size()) * (type / 2) +
-                                m_labelNames.size() * cur_token + cur_label;
+                                    m_labelNames.size() * cur_token + cur_label;
                         else
                             feature_idx = (m_tokenNames.size() * m_labelNames.size()) * 5 +
                                     m_labelNames.size() * (type / 2) + cur_label;
@@ -322,14 +313,8 @@ public class SeqAnalyzer {
                     }
                 }
             } else {
-                for(int arr_i = 0; arr_i < start_feature_arr.length; arr_i++) {
-                    start_feature_arr[arr_i] = Math.random();
-                }
-                for(int arr_i = 0; arr_i < trans_feature_arr.length; arr_i++) {
-                    trans_feature_arr[arr_i] = Math.random();
-                }
-//                Arrays.fill(start_feature_arr, 1.0);
-//                Arrays.fill(trans_feature_arr, 1.0);
+                Arrays.fill(start_feature_arr, 1.0);
+                Arrays.fill(trans_feature_arr, 1.0);
                 for (int i = 0; i < m_labelNames.size(); i++) {
                     feature_idx = node_feature_size + 10 + i;
                     if(weights.containsKey(feature_idx))
@@ -382,7 +367,7 @@ public class SeqAnalyzer {
                     }
 
                 } else {
-                   for(int label_i = 0; label_i < m_labelNames.size(); label_i++) {
+                    for(int label_i = 0; label_i < m_labelNames.size(); label_i++) {
                         cur_label = label_i;
                         feature_idx = cur_feature_size + 10 + m_labelNames.size() * (type-11)
                                 + cur_label;

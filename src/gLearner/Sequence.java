@@ -1,6 +1,7 @@
 package gLearner;
 
 import java.util.ArrayList;
+import structures.Token;
 
 public class Sequence {
 	String m_content;
@@ -17,7 +18,14 @@ public class Sequence {
 		this.m_tokenList = tokenlist;
 	}
 
-	void setLabels(int[] labels){
+	void setLabelIDs(int[] labelIDs){
+		ArrayList<Token> tokenlist = new ArrayList<>();
+		for(int i = 0; i < m_tokenList.size(); i++){
+			m_tokenList.get(i).setLabelID(labelIDs[i]);
+		}
+	}
+
+	void setLabels(String[] labels){
 		ArrayList<Token> tokenlist = new ArrayList<>();
 		for(int i = 0; i < m_tokenList.size(); i++){
 			m_tokenList.get(i).setLabel(labels[i]);
@@ -30,36 +38,56 @@ public class Sequence {
 		m_tokenList.add(new Token(content, index));
 	}
 	
-	void assignLabel(int tokenIdx, int label) {
-		if (tokenIdx < m_tokenList.size()) 
-			m_tokenList.get(tokenIdx).m_label = label;
+	void assignLabel(int tokenIdx, String label, int labelID) {
+		if (tokenIdx < m_tokenList.size()) {
+			m_tokenList.get(tokenIdx).setLabel(label);
+			m_tokenList.get(tokenIdx).setLabelID(labelID);
+		}
 		else 
 			System.err.format("Token index %d out of sequence range %d!", tokenIdx, m_tokenList.size());
 	}
 	
-	int[] getLabels() {
+	int[] getLabelIDs() {
 		int[] labels = new int[m_tokenList.size()];
 		
 		for(int i=0; i<labels.length; i++)
-			labels[i] = m_tokenList.get(i).m_label;
+			labels[i] = m_tokenList.get(i).getLabelID();
 		
 		return labels;
 	}
+
+	public String[] getLabels() {
+		String[] labels = new String[m_tokenList.size()];
+
+		for(int i=0; i<labels.length; i++)
+			labels[i] = m_tokenList.get(i).getLabel();
+
+		return labels;
+	}
 	
-	int[] getTokens() {
+	int[] getTokenIDs() {
 		int[] tokens = new int[m_tokenList.size()];
 		
 		for(int i=0; i<tokens.length; i++)
-			tokens[i] = m_tokenList.get(i).m_index;
+			tokens[i] = m_tokenList.get(i).getIndex();
 		
 		return tokens;
 	}
 
-	int[] getLabels(int min, int max) {
+	public String[] getTokens() {
+		String[] tokens = new String[m_tokenList.size()];
+
+		for(int i=0; i<tokens.length; i++)
+			tokens[i] = m_tokenList.get(i).getToken();
+
+		return tokens;
+	}
+
+	int[] getLabelIDs(int min, int max) {
 		int[] labels = new int[max-min];
 
 		for(int i=min; i<max; i++)
-			labels[i] = m_tokenList.get(i).m_label;
+			labels[i] = m_tokenList.get(i).getLabelID();
 
 		return labels;
 	}
@@ -68,7 +96,7 @@ public class Sequence {
 		int[] tokens = new int[max-min];
 
 		for(int i=min; i<max; i++)
-			tokens[i] = m_tokenList.get(i).m_index;
+			tokens[i] = m_tokenList.get(i).getIndex();
 
 		return tokens;
 	}
