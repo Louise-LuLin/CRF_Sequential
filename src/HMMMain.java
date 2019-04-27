@@ -33,8 +33,8 @@ public class HMMMain {
 
         ArrayList<Sequence> seqs = seqAnalyzer.getSequences();
 
-        hmmTagger.activeLearning(seqs, 30, 210, 200, String.format("%s/%s", para.m_prefix, para.m_source),
-        14, 2000, "margin");
+        hmmTagger.activeLearning(seqs, para.m_train_k, para.m_query_k, para.m_test_k, String.format("%s/%s", para.m_prefix, para.m_source),
+        para.m_tuple_k, para.m_budget_k, para.m_model);
 
 
     }
