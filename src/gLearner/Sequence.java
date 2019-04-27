@@ -19,7 +19,6 @@ public class Sequence {
 	}
 
 	void setLabelIDs(int[] labelIDs){
-		ArrayList<Token> tokenlist = new ArrayList<>();
 		for(int i = 0; i < m_tokenList.size(); i++){
 			m_tokenList.get(i).setLabelID(labelIDs[i]);
 		}

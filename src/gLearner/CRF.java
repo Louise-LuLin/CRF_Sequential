@@ -422,8 +422,8 @@ public class CRF {
                 writer.write("\n");
 
                 writer.write("quer: ");
-                for(String lbl : trace_samples.get(i).getLabels()) {
-                    writer.write(String.format("%s,", lbl));
+                for(Integer id : trace_samples.get(i).getLabelIDs()) {
+                    writer.write(String.format("%s,", m_seq.getLabelName(id)));
                 }
                 writer.write("\n");
 
