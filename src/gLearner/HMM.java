@@ -85,16 +85,19 @@ public class HMM {
                 Sequence new_seq = candi_seqs.get(random_j);
                 candi_seqs.remove(random_j);
 
-                int[] arr = new int[new_seq.getLength()];
-                for (int i = 0; i < arr.length; i++) {
-                    arr[i] = i;
+                if(tuple_k > new_seq.getLength()){
+                    tuple_k = new_seq.getLength();
                 }
-                Collections.shuffle(Arrays.asList(arr));
+                ArrayList<Integer> arr = new ArrayList<>();
+                for (int i = 0; i < new_seq.getLength(); i++) {
+                    arr.add(i);
+                }
+                Collections.shuffle(arr);
 
                 String[] true_labels = new_seq.getLabels();
                 String[] pred_labels = Viterbi4HMM(new_seq.getTokens());
                 for (int i = 0; i < tuple_k; i++){
-                    pred_labels[arr[i]] = true_labels[arr[i]];
+                    pred_labels[arr.get(i)] = true_labels[arr.get(i)];
                 }
 
 
@@ -186,15 +189,15 @@ public class HMM {
             String[] poses = seq.getLabels();
 
             for(int i = 0;i < words.length; i++){
-                addToken(m_emission_stats, poses[i] + "-" + words[i]);
+                addToken(m_emission_stats, poses[i] + "#" + words[i]);
                 addToken(m_tagset_stats, poses[i]);
                 addToken(m_tokenset_stats, words[i]);
 
                 String pos = poses[i];
                 for (int j = i - 1; j >= Math.max(0, i - 1); j--) {
-                    pos = poses[j] + "-" + pos;
+                    pos = poses[j] + "#" + pos;
                 }
-                if(pos.contains("-")) {
+                if(pos.contains("#")) {
                     addToken(m_transition_stats, pos);
                 }
             }
@@ -245,14 +248,14 @@ public class HMM {
             for(int j = 0; j < tagN; j++){
                 int range = 2;
                 if (i == 1) {
-                    range = 1;
+                    range = 2;
                 }
                 HashMap<String, Double> probs = new HashMap<>();
                 for (int l = 0; l < range; l++) {
                     for (int k = 0; k < tagN; k++) {
-                        String key = Integer.toString(l) + "-" + Integer.toString(k);
+                        String key = Integer.toString(l) + "#" + Integer.toString(k);
                         Double value = trellis[l][k][i - 1] * m_tagTag.calcAdditiveSmoothedProb(tagset.get(k)
-                                + "-" + tagset.get(j));
+                                + "#" + tagset.get(j));
                         probs.put(key, value);
                     }
                 }
@@ -266,11 +269,11 @@ public class HMM {
                 });
 
                 trellis[0][j][i] = m_wordTag.calcAdditiveSmoothedProb(tagset.get(j)
-                        + "-" + words[i-1]) * probList.get(0).getValue();
+                        + "#" + words[i-1]) * probList.get(0).getValue();
                 position[0][j][i] = probList.get(0).getKey();
 
                 trellis[1][j][i] = m_wordTag.calcAdditiveSmoothedProb(tagset.get(j)
-                        + "-" + words[i-1]) * probList.get(1).getValue();
+                        + "#" + words[i-1]) * probList.get(1).getValue();
                 position[1][j][i] = probList.get(1).getKey();
             }
         }
@@ -278,7 +281,7 @@ public class HMM {
         HashMap<String, Double> probs = new HashMap<>();
         for (int k = 0; k < tagN; k++) {
             for(int l = 0; l < 2; l++){
-                String key = Integer.toString(l) + "-" + Integer.toString(k);
+                String key = Integer.toString(l) + "#" + Integer.toString(k);
                 Double value = trellis[l][k][wordN];
                 probs.put(key, value);
             }
@@ -295,19 +298,19 @@ public class HMM {
         int[] top1_tag_seq = new int[wordN + 1];
         int[] top2_tag_seq = new int[wordN + 1];
         int[] top3_tag_seq = new int[wordN + 1];
-        int l1 = Integer.valueOf(probList.get(0).getKey().split("-")[0]);
-        int k1 = Integer.valueOf(probList.get(0).getKey().split("-")[1]);
-        int l2 = Integer.valueOf(probList.get(1).getKey().split("-")[0]);
-        int k2 = Integer.valueOf(probList.get(1).getKey().split("-")[1]);
-        int l3 = Integer.valueOf(probList.get(2).getKey().split("-")[0]);
-        int k3 = Integer.valueOf(probList.get(2).getKey().split("-")[1]);
+        int l1 = Integer.valueOf(probList.get(0).getKey().split("#")[0]);
+        int k1 = Integer.valueOf(probList.get(0).getKey().split("#")[1]);
+        int l2 = Integer.valueOf(probList.get(1).getKey().split("#")[0]);
+        int k2 = Integer.valueOf(probList.get(1).getKey().split("#")[1]);
+        int l3 = Integer.valueOf(probList.get(2).getKey().split("#")[0]);
+        int k3 = Integer.valueOf(probList.get(2).getKey().split("#")[1]);
         top1_tag_seq[wordN] = k1;
         top2_tag_seq[wordN] = k2;
         top3_tag_seq[wordN] = k3;
         for(int i = wordN; i > 0; i--){
-            String[] pos1 = position[l1][top1_tag_seq[i]][i].split("-");
-            String[] pos2 = position[l2][top2_tag_seq[i]][i].split("-");
-            String[] pos3 = position[l3][top3_tag_seq[i]][i].split("-");
+            String[] pos1 = position[l1][top1_tag_seq[i]][i].split("#");
+            String[] pos2 = position[l2][top2_tag_seq[i]][i].split("#");
+            String[] pos3 = position[l3][top3_tag_seq[i]][i].split("#");
             top1_tag_seq[i - 1] = Integer.valueOf(pos1[1]);
             top2_tag_seq[i - 1] = Integer.valueOf(pos2[1]);
             top3_tag_seq[i - 1] = Integer.valueOf(pos3[1]);
@@ -317,13 +320,13 @@ public class HMM {
         }
 
         int flag = 1;//1 indicate that top1 == top2
-        for(int i = 0; i < wordN; i++){
-            if(top1_tag_seq[i+1] != top2_tag_seq[i+1]){
-                flag = 0;
-                System.out.format("[Warning]Same top1 and top2!\n");
-                break;
-            }
-        }
+//        for(int i = 0; i < wordN; i++){
+//            if(top1_tag_seq[i+1] != top2_tag_seq[i+1]){
+//                flag = 0;
+//                System.out.format("[Warning]Same top1 and top2!\n");
+//                break;
+//            }
+//        }
         if (flag == 1){
             for(int i = 0; i < wordN+1; i++){
                 top2_tag_seq[i] = top3_tag_seq[i];
@@ -369,7 +372,7 @@ public class HMM {
                 for(int k = 0; k < tagN; k++){
                     double pre = trellis[k][i-1] *
                             m_tagTag.calcAdditiveSmoothedProb(tagset.get(k)
-                                    + "-" + tagset.get(j));
+                                    + "#" + tagset.get(j));
                     if(pre > maxPre){
                         maxPre = pre;
                         position[j][i] = k;
@@ -377,7 +380,7 @@ public class HMM {
                 }
 
                 trellis[j][i] = m_wordTag.calcAdditiveSmoothedProb(tagset.get(j)
-                        + "-" + words[i-1]) * maxPre;
+                        + "#" + words[i-1]) * maxPre;
             }
         }
 
@@ -407,12 +410,12 @@ public class HMM {
             double prob = Math.random();
             double cumulateProb = 0.0;
             for (String cur : candidates) {
-                String token = pre + "-" + cur;
+                String token = pre + "#" + cur;
                 double curProb = 0.0;
                 curProb = lm.calcAdditiveSmoothedProb(token);
                 cumulateProb += curProb;
                 if ((prob - cumulateProb) <= 0) {
-                    return token.substring(token.lastIndexOf('-') + 1, token.length());
+                    return token.substring(token.lastIndexOf('#') + 1, token.length());
                 }
             }
         }
@@ -438,8 +441,8 @@ public class HMM {
 
                 sts.add(curWd);
                 tags.add(curTg);
-                lkl += Math.log(m_tagTag.calcAdditiveSmoothedProb(oldTg + "-" + curTg));
-                lkl += Math.log(m_wordTag.calcAdditiveSmoothedProb(curTg + "-" + curWd));
+                lkl += Math.log(m_tagTag.calcAdditiveSmoothedProb(oldTg + "#" + curTg));
+                lkl += Math.log(m_wordTag.calcAdditiveSmoothedProb(curTg + "#" + curWd));
             }
             stss.add(sts);
             postags.add(tags);

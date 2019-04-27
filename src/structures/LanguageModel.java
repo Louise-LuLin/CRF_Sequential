@@ -58,7 +58,7 @@ public class LanguageModel {
             }
             if(m_N > 1) {
                 String token = entry.getKey();
-                String pre = token.substring(0, token.lastIndexOf('-'));
+                String pre = token.substring(0, token.lastIndexOf('#'));
                 if (this.m_S.containsKey(pre)) {
                     this.m_S.put(pre, this.m_S.get(pre) + 1.0);
                 } else {
@@ -86,7 +86,7 @@ public class LanguageModel {
 	
 	public double calcMLProb(String token) {
         if(m_N > 1){
-            String pre = token.substring(0, token.lastIndexOf('-'));
+            String pre = token.substring(0, token.lastIndexOf('#'));
             if(m_model.containsKey(token)) {
                 return m_model.get(token).getValue() / m_reference.getModel().get(pre).getValue();
             } else{
@@ -104,7 +104,12 @@ public class LanguageModel {
 
     public double calcAdditiveSmoothedProb(String token){
         if(m_N > 1){
-            String pre = token.substring(0, token.lastIndexOf("-"));
+            String pre = token.substring(0, token.lastIndexOf("#"));
+            if (m_model.containsKey(token) && !m_reference.getModel().containsKey(pre)){
+                System.out.println("!!!!");
+                System.out.println(token);
+                System.out.println(pre);
+            }
             if(m_model.containsKey(token)){
                 return (m_model.get(token).getValue() + m_delta) /
                         (m_reference.getModel().get(pre).getValue()
@@ -131,7 +136,7 @@ public class LanguageModel {
 
 	public double calcLinearSmoothedProb(String token) {
 		if (m_N > 1) {
-            String N_1gram = token.substring(token.indexOf('-') + 1, token.length());
+            String N_1gram = token.substring(token.indexOf('#') + 1, token.length());
             return (1.0 - m_lambda) * calcMLProb(token)
                     + m_lambda * m_reference.calcLinearSmoothedProb(N_1gram);
         }
@@ -147,8 +152,8 @@ public class LanguageModel {
 
     public double calcAbsoluteSmoothedProb(String token){
         if (m_N > 1) {
-            String pre = token.substring(0, token.lastIndexOf('-'));
-            String N_1gram = token.substring(token.indexOf('-') + 1, token.length());
+            String pre = token.substring(0, token.lastIndexOf('#'));
+            String N_1gram = token.substring(token.indexOf('#') + 1, token.length());
 
             if(m_reference.getModel().containsKey(pre)) {
                 double count = m_reference.getModel().get(pre).getValue();
