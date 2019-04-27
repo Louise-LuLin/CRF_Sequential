@@ -215,14 +215,14 @@ public class CRF {
             TPFN = 0;
 
             // begin query
-            if(tuple_k == 0){//choose a random whole sequence
+            if(tuple_k == 14 && model.equals("random")){//choose a random whole sequence
                 Random r = new Random();
                 int random_j = r.nextInt(candi_seqs.size());
                 train_label.add(candi_seqs.get(random_j).getLabelIDs());
                 training_data.add(m_seq.getStr4Learning(candi_seqs.get(random_j), "train", weights));
                 candi_seqs.remove(random_j);
                 trace_samples.add(candi_seqs.get(random_j));
-            } else if(tuple_k >= 50){//choose whole sequence with minimum confidence
+            } else if(tuple_k == 14 && model.equals("confidence")){//choose whole sequence with minimum confidence
                 double min = Double.MAX_VALUE;
                 int uncertain_j = 0;
                 FactorGraph tmpGraph, targetGraph = new FactorGraph();
