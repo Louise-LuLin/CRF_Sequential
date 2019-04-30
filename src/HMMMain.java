@@ -11,8 +11,8 @@ public class HMMMain {
         /***** experiment setting *****/
 
         /***** data setting *****/
-        String strPath = String.format("%s/%s/%s_string.txt", para.m_prefix, para.m_source, para.m_source);
-        String lblPath = String.format("%s/%s/%s_label.txt", para.m_prefix, para.m_source, para.m_source);
+        String strPath = String.format("%s/%s/%s_string_shuffle.txt", para.m_prefix, para.m_source, para.m_source);
+        String lblPath = String.format("%s/%s/%s_label_shuffle.txt", para.m_prefix, para.m_source, para.m_source);
         String tkNamePath = String.format("%s/%s/tokenName.txt", para.m_prefix, para.m_source);
         String lbNamePath = String.format("%s/%s/labelName.txt", para.m_prefix, para.m_source);
 
@@ -34,7 +34,7 @@ public class HMMMain {
         ArrayList<Sequence> seqs = seqAnalyzer.getSequences();
 
         hmmTagger.activeLearning(seqs, para.m_train_k, para.m_query_k, para.m_test_k, String.format("%s/%s", para.m_prefix, para.m_source),
-        para.m_tuple_k, para.m_budget_k, para.m_model);
+        para.m_tuple_k, 500, "margin2");
 
 
     }

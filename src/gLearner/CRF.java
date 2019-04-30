@@ -139,11 +139,13 @@ public class CRF {
 //            testing_seq.add(m_seq.getSequences().get(test_idx.get(i)));
 //        }
 
+        int initila_cost = 0;
         for(Sequence seq : train_seqs){
             train_label.add(seq.getLabelIDs());
             pred_label.add(seq.getLabelIDs());
             training_data.add(m_seq.getStr4Learning(seq, "train", weights));
             trace_samples.add(seq);
+            initila_cost += seq.getLength();
         }
 
         ArrayList<int[]> test_label = new ArrayList<>();
@@ -165,7 +167,7 @@ public class CRF {
         //active learning
         GraphLearner m_graphLearner = null;
         double TP = 0, TPFN = 0, TPFP = 0, TP_accumulate = 0, TPFP_accumulate = 0, TPFN_accumulate = 0;
-        for(int count = 14 * train_k; count <= budget_k; count += tuple_k){
+        for(int count = initila_cost; count <= budget_k + initila_cost; count += tuple_k){
 
 
             System.out.format("==========\n[Info]Cost %d in %d bugdet...\n", count, budget_k);
@@ -215,14 +217,16 @@ public class CRF {
             TPFN = 0;
 
             // begin query
-            if(tuple_k == 14 && model.equals("random")){//choose a random whole sequence
+            if(model.equals("randomfull")){//choose a random whole sequence
                 Random r = new Random();
                 int random_j = r.nextInt(candi_seqs.size());
                 train_label.add(candi_seqs.get(random_j).getLabelIDs());
                 training_data.add(m_seq.getStr4Learning(candi_seqs.get(random_j), "train", weights));
+                tuple_k = candi_seqs.get(random_j).getLength();
                 candi_seqs.remove(random_j);
                 trace_samples.add(candi_seqs.get(random_j));
-            } else if(tuple_k == 14 && model.equals("confidence")){//choose whole sequence with minimum confidence
+
+            } else if(model.equals("confidencefull")){//choose whole sequence with minimum confidence
                 double min = Double.MAX_VALUE;
                 int uncertain_j = 0;
                 FactorGraph tmpGraph, targetGraph = new FactorGraph();
@@ -256,15 +260,15 @@ public class CRF {
 
                 train_label.add(candi_seqs.get(uncertain_j).getLabelIDs());
                 training_data.add(m_seq.getStr4Learning(candi_seqs.get(uncertain_j), "train", weights));
+                tuple_k = candi_seqs.get(uncertain_j).getLength();
                 candi_seqs.remove(uncertain_j);
                 trace_samples.add(candi_seqs.get(uncertain_j));
             } else {//choose sub sequence
                 double min = Double.MAX_VALUE;
-                int uncertain_j = 0, uncertain_k=0;
+                int uncertain_j = 0;
                 FactorGraph tmpGraph, targetGraph = new FactorGraph();
                 double[] tuple_confidence;
                 double tmpConficence;
-                ArrayList<Integer> tmpPred = new ArrayList<>();
                 ArrayList<Integer> targetPred = new ArrayList<>();
 
                 // first find the sequence with least confidence

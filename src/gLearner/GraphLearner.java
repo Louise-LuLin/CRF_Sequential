@@ -50,7 +50,7 @@ public class GraphLearner implements Maximizable.ByGradient{
     BufferedWriter m_writer;
 
     GraphLearner(ArrayList<String4Learning> traininglist){
-        m_infer = new LoopyBP(100);
+        m_infer = new LoopyBP(50);
 //        m_infer = new JunctionTreeInferencer();
 
         int featureDim = setTrainingSet(traininglist);
@@ -444,7 +444,7 @@ public class GraphLearner implements Maximizable.ByGradient{
         AssignmentIterator it;
         Factor ptl;
         Variable variable;
-        int varSize, var, labelID = 6;
+        int varSize, var, labelID = 0;
         double max;
 
         Inferencer m_infer = LoopyBP.createForMaxProduct();
@@ -455,18 +455,16 @@ public class GraphLearner implements Maximizable.ByGradient{
         for(var=0; var<varSize; var++) {
             //retrieve the MAP configuration
             variable = graph.get(var);
-            int best = m_infer.lookupMarginal(variable).argmax();
-            pred.add(best);
-//            ptl = m_infer.lookupMarginal(variable);
-//            max = -Double.MAX_VALUE;
-//            for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
-//                //System.out.println(ptl.value(it));
-//                if (ptl.value(it)>max) {
-//                    max = ptl.value(it);
-//                    labelID = it.indexOfCurrentAssn();
-//                }
-//            }
-//            pred.add(labelID);
+            ptl = m_infer.lookupMarginal(variable);
+            max = -Double.MAX_VALUE;
+            for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
+                //System.out.println(ptl.value(it));
+                if (ptl.value(it)>max) {
+                    max = ptl.value(it);
+                    labelID = it.indexOfCurrentAssn();
+                }
+            }
+            pred.add(labelID);
         }
 
         Variable[] variables = new Variable[k];
@@ -521,7 +519,7 @@ public class GraphLearner implements Maximizable.ByGradient{
         AssignmentIterator it;
         Factor ptl;
         Variable variable;
-        int varSize, var, labelID = 6;
+        int varSize, var, labelID = 0;
         double max;
         ArrayList<Integer> pred = new ArrayList<>();
 
@@ -534,18 +532,16 @@ public class GraphLearner implements Maximizable.ByGradient{
         for(var=0; var<varSize; var++) {
             //retrieve the MAP configuration
             variable = graph.get(var);
-            int best = m_infer.lookupMarginal(variable).argmax();
-            pred.add(best);
-//            ptl = m_infer.lookupMarginal(variable);
-//            max = -Double.MAX_VALUE;
-//            for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
-//                //System.out.println(ptl.value(it));
-//                if (ptl.logValue(it)>max) {
-//                    max = ptl.logValue(it);
-//                    labelID = it.indexOfCurrentAssn();
-//                }
-//            }
-//            pred.add(labelID);
+            ptl = m_infer.lookupMarginal(variable);
+            max = -Double.MAX_VALUE;
+            for (it = ptl.assignmentIterator(); it.hasNext(); it.next()) {
+                //System.out.println(ptl.value(it));
+                if (ptl.value(it)>max) {
+                    max = ptl.value(it);
+                    labelID = it.indexOfCurrentAssn();
+                }
+            }
+            pred.add(labelID);
         }
 
         return pred;

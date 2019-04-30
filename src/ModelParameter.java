@@ -14,7 +14,7 @@ public class ModelParameter {
     public int m_test_k = 200;
     public int m_query_k = 100;
     public int m_tuple_k = 0;
-    public int m_budget_k = 1;
+    public int m_budget_k = 100;
     //LC: least confidence
     //M: margin
     //SE: subsequence entropy

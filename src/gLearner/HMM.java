@@ -273,8 +273,8 @@ public class HMM {
                 position[0][j][i] = probList.get(0).getKey();
 
                 trellis[1][j][i] = m_wordTag.calcAdditiveSmoothedProb(tagset.get(j)
-                        + "#" + words[i-1]) * probList.get(1).getValue();
-                position[1][j][i] = probList.get(1).getKey();
+                        + "#" + words[i-1]) * probList.get(range).getValue();
+                position[1][j][i] = probList.get(range).getKey();
             }
         }
 

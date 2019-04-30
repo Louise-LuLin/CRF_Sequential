@@ -33,8 +33,10 @@ public class test {
             BufferedWriter writer1 = new BufferedWriter(new FileWriter(strfile));
             BufferedWriter writer2 = new BufferedWriter(new FileWriter(lblfile));
             for(int i = 0; i < seqs.size(); i++){
+
                 String[] strs = seqs.get(i).getTokens();
                 String[] lbls = seqs.get(i).getLabels();
+                System.out.format("label %d, token %d\n", strs.length, lbls.length);
                 for(int j = 0; j < strs.length; j++){
                     writer1.write(strs[j]);
                     writer2.write(lbls[j] + ",");

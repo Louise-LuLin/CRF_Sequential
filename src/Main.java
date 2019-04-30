@@ -11,8 +11,8 @@ public class Main {
         /***** experiment setting *****/
 
         /***** data setting *****/
-        String strPath = String.format("%s/%s/%s_string_shuffle.txt", para.m_prefix, para.m_source, para.m_source);
-        String lblPath = String.format("%s/%s/%s_label_shuffle.txt", para.m_prefix, para.m_source, para.m_source);
+        String strPath = String.format("%s/%s/%s_string.txt", para.m_prefix, para.m_source, para.m_source);
+        String lblPath = String.format("%s/%s/%s_label.txt", para.m_prefix, para.m_source, para.m_source);
         String tkNamePath = String.format("%s/%s/tokenName.txt", para.m_prefix, para.m_source);
         String lbNamePath = String.format("%s/%s/labelName.txt", para.m_prefix, para.m_source);
 
